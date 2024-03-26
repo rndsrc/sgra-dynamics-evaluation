@@ -271,11 +271,119 @@ def fit_ring(image,Nr=50,Npa=25,rmin_search = 10,rmax_search = 100,fov_search = 
                          fov_search=fov_search, n_search=Nserch)
     return xc,yc
 
+# polarization functions ##############################
+def make_polar_imarr(imarr, dx, xc=None, yc=None, rmax=50, Nr=50, Npa=180, kind="linear"):
+    '''
+    Image array with polar coordinates
+    Args:
+        imarr (np.ndarray): 1dimensional image array. shape=(ny, nx)
+        dx (float): pixel size with the x, y axis
+        xc,yc: center of the ring
+        rmax (float): maximum radial coordinate for the polar coordinates
+        Nr, Npa (int): pixel number of the polar coordinates
+        kind (str): kind of interpolation for polar coordinates
+    Return:
+        radial_imarr (np.ndarray)
+    '''
+    nx,ny = imarr.shape
+    dy=dx
+    x= np.arange(nx)*dx/RADPERUAS
+    y= np.arange(ny)*dy/RADPERUAS
+    #xc, yc =(np.max(x)-np.min(x))/2, (np.max(y)-np.min(y))/2
+    if xc==None or yc==None:
+    # Compute the image center
+        xc,yc = fit_ring(image)
+
+    z = imarr
+    f_image = interpolate.interp2d(x,y,z,kind=kind)
+
+    # Create a mesh grid in polar coordinates
+    radial_imarr = np.zeros([Nr,Npa])
+    pa = np.linspace(0,360,Npa)
+    pa_rad = np.deg2rad(pa)
+    radius = np.linspace(0,rmax,Nr)
+    dr = radius[-1]-radius[-2]
+
+    # interpolation with polar coordinates
+    Rmesh, PAradmesh = np.meshgrid(radius, pa_rad)
+    x, y = Rmesh*np.sin(PAradmesh) + xc, Rmesh*np.cos(PAradmesh) + yc
+    for ir in range(Nr):
+        z = [f_image(x[ipa][ir],y[ipa][ir]) for ipa in range(Npa)]
+        radial_imarr[ir,:] = z[:]
+    radial_imarr = np.fliplr(radial_imarr)
+
+    return radial_imarr,radius, pa
+
+def extract_pol_quantites(im,xc=None, yc=None, blur_size=-1):
+    '''
+    Calculate polarization quantites with the input image object and blur size in the unit of uas
+    Returns:
+        net fractional linear polarization, image averaged linear polarization, EVPA (deg), beta2 magnitude and phase (deg), fractional circular polarization
+    '''
+    Itot, Qtot, Utot = sum(im.imvec), sum(im.qvec), sum(im.uvec)
+    if len(im.vvec)==0:
+        print("Caution: no stokes V")
+        im.vvec = np.zeros_like(im.imvec)
+    Vtot = sum(im.vvec)
+    # net fractional linear polarization
+    mnet=np.sqrt(Qtot*Qtot + Utot*Utot)/Itot
+
+    # image averaged linear polarization
+    if blur_size<0:
+        mavg = sum(np.sqrt(im.qvec**2 + im.uvec**2))/Itot
+    else:
+        im_blur = im.blur_circ(blur_size*eh.RADPERUAS, fwhm_pol=blur_size*eh.RADPERUAS)
+        mavg = sum(np.sqrt(im_blur.qvec**2 + im_blur.uvec**2))/np.sum(im_blur.imvec)
+
+    # evpa
+    evpa =  (180./np.pi)*0.5*np.angle(Qtot+1j*Utot)
+
+    # fractional circular polarization
+    vnet = np.abs(Vtot)/Itot
+
+    # beta2
+    P = im.qvec+ 1j*im.uvec
+    P_radial, radius, pa = make_polar_imarr(P.reshape(im.xdim, im.xdim), dx=im.psize, xc=xc, yc=yc)
+    I_radial, dummy, dummy = make_polar_imarr(im.imvec.reshape(im.xdim, im.xdim), dx=im.psize, xc=xc, yc=yc)
+    V_radial, dummy, dummy = make_polar_imarr(im.vvec.reshape(im.xdim, im.xdim), dx=im.psize, xc=xc, yc=yc)
+    Pring, Vring, Vring2, Iring = 0, 0, 0, 0
+    for ir, ipa in itertools.product(range(len(radius)), range(len(pa))):
+        Pring += P_radial[ir, ipa] * np.exp(-2*1j*np.deg2rad(pa[ipa])) * radius[ir]
+        Vring2 += V_radial[ir, ipa] * np.exp(-2*1j*np.deg2rad(pa[ipa])) * radius[ir]
+        Vring  += V_radial[ir, ipa] * np.exp(-1*1j*np.deg2rad(pa[ipa])) * radius[ir]
+        Iring += I_radial[ir, ipa] * radius[ir]
+    beta2 = Pring/Iring
+    beta2_abs, beta2_angle = np.abs(beta2), np.rad2deg(np.angle(beta2))
+
+    beta2_v = Vring2/Iring
+    beta2_v_abs, beta2_v_angle = np.abs(beta2_v), np.rad2deg(np.angle(beta2_v))
+    beta_v = Vring/Iring
+    beta_v_abs, beta_v_angle = np.abs(beta_v), np.rad2deg(np.angle(beta_v))
+
+    # output dictionary
+    outputs = dict(
+        time_utc = im.time,
+        mnet = mnet,
+        mavg = mavg,
+        evpa = evpa,
+        beta2_abs = beta2_abs,
+        beta2_angle = beta2_angle,
+        vnet = vnet,
+        beta_v_abs = beta_v_abs,
+        beta_v_angle = beta_v_angle,
+        beta2_v_abs = beta2_v_abs,
+        beta2_v_angle = beta2_v_angle
+        )
+    return outputs
+
+# polarization functions ##############################
+
 
 ######################################################################
 # Plotting Setup
 ######################################################################
 #plt.rc('text', usetex=True)
+
 import matplotlib as mpl
 #mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
 mpl.rcParams['figure.dpi']=300
@@ -283,10 +391,12 @@ mpl.rcParams['figure.dpi']=300
 plt.rcParams["xtick.direction"]="in"
 plt.rcParams["ytick.direction"]="in"
 plt.style.use('dark_background')
+
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
 mpl.rcParams["ytick.labelsize"] = 18
 mpl.rcParams["legend.fontsize"] = 18
+######################################################################
 
 from matplotlib import font_manager
 font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
@@ -364,7 +474,9 @@ colors = {
             'ehtim'    : 'forestgreen',
             'doghit'   : 'darkviolet',
             'ngmem'    : 'crimson',
-            'resolve'  : 'hotpink'
+            'resolve'  : 'hotpink',
+            'ehtim_mod1' : 'yellow',
+            'ehtim_mod2' : 'white'
         }
 
 labels = {
@@ -374,22 +486,10 @@ labels = {
             'ehtim'    : 'ehtim',
             'doghit'   : 'DoG-HiT',
             'ngmem'    : 'ngMEM',
-            'resolve'  : 'resolve'
+            'resolve'  : 'resolve',
+            'ehtim_mod1' : 'ehtim mI=2 str',
+            'ehtim_mod2' : 'ehtim mI=3'
         }
-
-fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(32,8), sharex=True)
-
-ax[0,0].set_ylabel('Diameter $({\mu as})$')
-ax[0,1].set_ylabel('FWHM $({\mu as})$')
-ax[0,2].set_ylabel('Position angle ($^\circ$)')
-
-ax[1,0].set_ylabel('Frac. Central Brightness')
-ax[1,1].set_ylabel('Asymmetry')
-ax[1,2].set_ylabel('Peak PA ($^\circ$)')
-
-ax[1,0].set_xlabel('Time (UTC)')
-ax[1,1].set_xlabel('Time (UTC)')
-ax[1,2].set_xlabel('Time (UTC)')
 
 
 polpaths={}
@@ -408,6 +508,40 @@ for p in paths.keys():
         if len(im.ivec)>0 and len(im.vvec)>0:
             polvpaths[p]=paths[p]
 
+######################################################################
+# Stokes I
+fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(32,8), sharex=True)
+
+ax[0,0].set_ylabel('Diameter $({\mu as})$')
+ax[0,1].set_ylabel('FWHM $({\mu as})$')
+ax[0,2].set_ylabel('Position angle ($^\circ$)')
+
+ax[1,0].set_ylabel('Frac. Central Brightness')
+ax[1,1].set_ylabel('Asymmetry')
+ax[1,2].set_ylabel('Peak PA ($^\circ$)')
+
+#ax[0,0].set_xlabel('Time (UTC)')
+#ax[0,1].set_xlabel('Time (UTC)')
+#ax[0,2].set_xlabel('Time (UTC)')
+
+ax[1,0].set_xlabel('Time (UTC)')
+ax[1,1].set_xlabel('Time (UTC)')
+ax[1,2].set_xlabel('Time (UTC)')
+
+
+#ax[0].set_ylim(0.0,0.1)
+#ax[1].set_ylim(0.0,0.15)
+#ax[2].set_ylim(0.0,0.05)
+#ax[3].set_ylim(0.0,0.1)
+
+#mv_nxcorr={}
+#for p in paths.keys():
+#    mv_nxcorr[p]=np.zeros(4)
+
+#row_labels = ['$|m|_{net}$','$\langle |m| \rangle$'],'$|v_{net}$','$ \langle |v| \rangle $']
+#table_vals = pd.DataFrame(data=mv_nxcorr, index=row_labels)
+
+
 for p in polpaths.keys():
     mv=eh.movie.load_hdf5(polpaths[p])
 
@@ -417,8 +551,11 @@ for p in polpaths.keys():
     # find ring center with the averaged image
     xc,yc = fit_ring(mv_ave)
     ring_outputs = [extract_ring_quantites(im_f,xc=xc,yc=yc) for im_f in tqdm.tqdm(imlist)]
+
+    # if kine like shifting center, need use the following
+    # ring_outputs = [extract_ring_quantites(image_f) for image_f in tqdm.tqdm(ims_rg[0].im_list())]
+
     table = pd.DataFrame(ring_outputs, columns=["time_utc", "D","Derr","W","Werr","PAori","PAerr","papeak","A","Aerr","fc","xc","yc","fwhm_maj","fwhm_min","hole_flux","outer_flux","ring_flux","totalflux","hole_dflux","outer_dflux","ring_dflux"])
-    #table_vals[p]=np.round(np.mean(np.array(mnet_tab)),3)
 
     mc=colors[p]
     alpha = 0.5
@@ -438,3 +575,63 @@ for p in polpaths.keys():
 
 ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3., 1.3), markerscale=2.5)
 plt.savefig(args.outpath+'.png', bbox_inches='tight', dpi=300)
+
+######################################################################
+# Stokes QUV
+fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(32,8), sharex=True)
+#"mnet", "mavg", "evpa", "beta2_abs", "beta2_angle", "vnet"
+ax[0,0].set_ylabel('$|m|_{net}$')
+ax[0,1].set_ylabel(r'$\langle |m|\rangle$')
+ax[0,2].set_ylabel('$\chi\ (^\circ)$')
+
+ax[1,0].set_ylabel(r'$\beta_2$')
+ax[1,1].set_ylabel(r'$\angle \beta_2\ (^\circ)$')
+ax[1,2].set_ylabel('$|v|_{net}$')
+
+ax[1,0].set_xlabel('Time (UTC)')
+ax[1,1].set_xlabel('Time (UTC)')
+ax[1,2].set_xlabel('Time (UTC)')
+
+#ax[0].set_ylim(0.0,0.1)
+#ax[1].set_ylim(0.0,0.15)
+#ax[2].set_ylim(0.0,0.05)
+#ax[3].set_ylim(0.0,0.1)
+
+
+pol_count = 0
+for p in polpaths.keys():
+    mv=eh.movie.load_hdf5(polpaths[p])
+
+    imlist = [mv.get_image(t) for t in times]
+
+    if len(imlist[0].qvec)==len(imlist[0].ivec):
+        pol_count += 1
+        mv_ave = mv.avg_frame()
+        # find ring center with the averaged image
+        xc,yc = fit_ring(mv_ave)
+        pol_outputs = [extract_pol_quantites(im_f,xc=xc,yc=yc) for im_f in tqdm.tqdm(imlist)]
+
+        # if kine like shifting center, need use the following
+        # pol_outputs = [extract_pol_quantites(image_f) for image_f in tqdm.tqdm(ims_rg[0].im_list())]
+
+        table = pd.DataFrame(pol_outputs, columns=["time_utc","mnet","mavg","evpa","beta2_abs","beta2_angle","vnet","beta_v_abs", "beta_v_angle","beta2_v_abs", "beta2_v_angle"])
+
+        mc=colors[p]
+        alpha = 0.5
+        lc=colors[p]
+        # Diameter
+        ax[0,0].plot(times, table["mnet"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
+        # FWHM
+        ax[0,1].plot(times, table["mavg"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        # Position angle
+        ax[0,2].plot(times, table["evpa"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        # Frac Central Brightness
+        ax[1,0].plot(times, table["beta2_abs"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        # Asymetry
+        ax[1,1].plot(times, table["beta2_angle"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        # peak position angle
+        ax[1,2].plot(times, table["vnet"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+
+if pol_count>0:
+    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3., 1.3), markerscale=2.5)
+    plt.savefig(args.outpath+'_pol.png', bbox_inches='tight', dpi=300)
