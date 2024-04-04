@@ -22,7 +22,7 @@ args = create_parser().parse_args()
 npix   = 128
 fov    = 200 * eh.RADPERUAS
 ntimes = 100
-tstart = 10.90 
+tstart = 10.91 
 tstop  = 13.90 #14.04 
 
 # tstart and tstop from obsfile of an example synthetic data

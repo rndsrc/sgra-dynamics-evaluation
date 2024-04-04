@@ -17,6 +17,7 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
+import itertools
 
 import argparse
 import os
@@ -378,12 +379,10 @@ def extract_pol_quantites(im,xc=None, yc=None, blur_size=-1):
 
 # polarization functions ##############################
 
-
 ######################################################################
 # Plotting Setup
 ######################################################################
 #plt.rc('text', usetex=True)
-
 import matplotlib as mpl
 #mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
 mpl.rcParams['figure.dpi']=300
@@ -391,12 +390,10 @@ mpl.rcParams['figure.dpi']=300
 plt.rcParams["xtick.direction"]="in"
 plt.rcParams["ytick.direction"]="in"
 plt.style.use('dark_background')
-
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
 mpl.rcParams["ytick.labelsize"] = 18
 mpl.rcParams["legend.fontsize"] = 18
-######################################################################
 
 from matplotlib import font_manager
 font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
@@ -474,9 +471,7 @@ colors = {
             'ehtim'    : 'forestgreen',
             'doghit'   : 'darkviolet',
             'ngmem'    : 'crimson',
-            'resolve'  : 'hotpink',
-            'ehtim_mod1' : 'yellow',
-            'ehtim_mod2' : 'white'
+            'resolve'  : 'hotpink'
         }
 
 labels = {
@@ -486,10 +481,22 @@ labels = {
             'ehtim'    : 'ehtim',
             'doghit'   : 'DoG-HiT',
             'ngmem'    : 'ngMEM',
-            'resolve'  : 'resolve',
-            'ehtim_mod1' : 'ehtim mI=2 str',
-            'ehtim_mod2' : 'ehtim mI=3'
+            'resolve'  : 'resolve'
         }
+
+fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(32,8), sharex=True)
+
+ax[0,0].set_ylabel('Diameter $({\mu as})$')
+ax[0,1].set_ylabel('FWHM $({\mu as})$')
+ax[0,2].set_ylabel('Position angle ($^\circ$)')
+
+ax[1,0].set_ylabel('Frac. Central Brightness')
+ax[1,1].set_ylabel('Asymmetry')
+ax[1,2].set_ylabel('Peak PA ($^\circ$)')
+
+ax[1,0].set_xlabel('Time (UTC)')
+ax[1,1].set_xlabel('Time (UTC)')
+ax[1,2].set_xlabel('Time (UTC)')
 
 
 polpaths={}
@@ -508,40 +515,6 @@ for p in paths.keys():
         if len(im.ivec)>0 and len(im.vvec)>0:
             polvpaths[p]=paths[p]
 
-######################################################################
-# Stokes I
-fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(32,8), sharex=True)
-
-ax[0,0].set_ylabel('Diameter $({\mu as})$')
-ax[0,1].set_ylabel('FWHM $({\mu as})$')
-ax[0,2].set_ylabel('Position angle ($^\circ$)')
-
-ax[1,0].set_ylabel('Frac. Central Brightness')
-ax[1,1].set_ylabel('Asymmetry')
-ax[1,2].set_ylabel('Peak PA ($^\circ$)')
-
-#ax[0,0].set_xlabel('Time (UTC)')
-#ax[0,1].set_xlabel('Time (UTC)')
-#ax[0,2].set_xlabel('Time (UTC)')
-
-ax[1,0].set_xlabel('Time (UTC)')
-ax[1,1].set_xlabel('Time (UTC)')
-ax[1,2].set_xlabel('Time (UTC)')
-
-
-#ax[0].set_ylim(0.0,0.1)
-#ax[1].set_ylim(0.0,0.15)
-#ax[2].set_ylim(0.0,0.05)
-#ax[3].set_ylim(0.0,0.1)
-
-#mv_nxcorr={}
-#for p in paths.keys():
-#    mv_nxcorr[p]=np.zeros(4)
-
-#row_labels = ['$|m|_{net}$','$\langle |m| \rangle$'],'$|v_{net}$','$ \langle |v| \rangle $']
-#table_vals = pd.DataFrame(data=mv_nxcorr, index=row_labels)
-
-
 for p in polpaths.keys():
     mv=eh.movie.load_hdf5(polpaths[p])
 
@@ -551,11 +524,8 @@ for p in polpaths.keys():
     # find ring center with the averaged image
     xc,yc = fit_ring(mv_ave)
     ring_outputs = [extract_ring_quantites(im_f,xc=xc,yc=yc) for im_f in tqdm.tqdm(imlist)]
-
-    # if kine like shifting center, need use the following
-    # ring_outputs = [extract_ring_quantites(image_f) for image_f in tqdm.tqdm(ims_rg[0].im_list())]
-
     table = pd.DataFrame(ring_outputs, columns=["time_utc", "D","Derr","W","Werr","PAori","PAerr","papeak","A","Aerr","fc","xc","yc","fwhm_maj","fwhm_min","hole_flux","outer_flux","ring_flux","totalflux","hole_dflux","outer_dflux","ring_dflux"])
+    #table_vals[p]=np.round(np.mean(np.array(mnet_tab)),3)
 
     mc=colors[p]
     alpha = 0.5
@@ -575,6 +545,7 @@ for p in polpaths.keys():
 
 ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3., 1.3), markerscale=2.5)
 plt.savefig(args.outpath+'.png', bbox_inches='tight', dpi=300)
+
 
 ######################################################################
 # Stokes QUV

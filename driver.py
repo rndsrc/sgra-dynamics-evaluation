@@ -21,7 +21,7 @@ colors = {
 
 # Results Directory
 resultsdir='results_VL_1'
-# Results Directory
+# Submission Directory
 subdir='submission_VL_1'
 
 models={
@@ -34,11 +34,22 @@ models={
         }
 
 
+modelsvida={
+        'crescent'  : 'mring_0_1', 
+        'ring'      : 'mring_0_0', 
+        'disk'      : 'disk_1', 
+        'edisk'     : 'stretchdisk_1',
+        'double'    : 'gauss_2', 
+        'point'     : 'gauss_2'
+        }
+
+
 epoch='3601'
 band='LO'
 cband='HI+LO'
 noise='thermal+phasegains'
 scat = 'none'   # Options: sct, dsct, none
+cores = 100
 
 ##############################################################################################
 # Directory of the results
@@ -57,6 +68,12 @@ if not os.path.exists(f'{basedir}/evaluation/{resultsdir}'):
         for pipe in colors.keys():
             if not os.path.exists(f'{basedir}/evaluation/{resultsdir}/averaged_movies/{pipe}'):
                 os.makedirs(f'{basedir}/evaluation/{resultsdir}/averaged_movies/{pipe}')
+                
+    if not os.path.exists(f'{basedir}/evaluation/{resultsdir}/VIDA'):
+        os.makedirs(f'{basedir}/evaluation/{resultsdir}/VIDA')
+        for pipe in colors.keys():
+            if not os.path.exists(f'{basedir}/evaluation/{resultsdir}/VIDA/{pipe}'):
+                os.makedirs(f'{basedir}/evaluation/{resultsdir}/VIDA/{pipe}')
                 
     if not os.path.exists(f'{basedir}/evaluation/{resultsdir}/plots'):
         os.makedirs(f'{basedir}/evaluation/{resultsdir}/plots')
@@ -77,20 +94,27 @@ for m in models.keys():
             modelname[m][pipe]=model
             
         # Interpolated Movies
-        indir=f'{basedir}/{subdir}/{pipe}/{model}/'
-        outdir=f'{basedir}/evaluation/{resultsdir}/interpolated_movies/{pipe}/{model}/'
+        if pipe!='truth':
+            indir=f'{basedir}/{subdir}/{pipe}/{model}_{noise}/'
+            outdir=f'{basedir}/evaluation/{resultsdir}/interpolated_movies/{pipe}/{model}_{noise}/'
+        else:
+            indir=f'{basedir}/{subdir}/{pipe}/{model}'
+            outdir=f'{basedir}/evaluation/{resultsdir}/interpolated_movies/{pipe}/{model}'
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        os.system(f'python {basedir}/evaluation/scripts/pipeline/src/hdf5_standardize.py -i {indir} -o {outdir}')
+        #os.system(f'python {basedir}/evaluation/scripts/pipeline/src/hdf5_standardize.py -i {indir} -o {outdir}')
         
         #Average Movies
-        outdir=f'{basedir}/evaluation/{resultsdir}/averaged_movies/{pipe}/{model}/'
+        if pipe!='truth':
+            outdir=f'{basedir}/evaluation/{resultsdir}/averaged_movies/{pipe}/{model}_{noise}/'
+        else:
+            outdir=f'{basedir}/evaluation/{resultsdir}/averaged_movies/{pipe}/{model}'
         if not os.path.exists(outdir):
             os.makedirs(outdir)
-        os.system(f'python {basedir}/evaluation/scripts/pipeline/src/avg_frame.py -i {indir} -o {outdir}')
+        #os.system(f'python {basedir}/evaluation/scripts/pipeline/src/avg_frame.py -i {indir} -o {outdir}')
 
 ##############################################################################################
-# Chi-squares, closure triangles, ampltitudes, nxcorr, gif, pol net avg, REx
+# Chi-squares, closure triangles, ampltitudes, nxcorr, gif, pol net avg, REx, VIDA
 ##############################################################################################
 for m in models: 
     if scat!='none':       
@@ -166,7 +190,43 @@ for m in models:
     # REx ring characterization
     if models[m] =='ring':
         outpath =f'{basedir}/evaluation/{resultsdir}/plots/rex_{modelname[m]["kine"]}'
-        if not os.path.exists(outpath+'.png'):
-            os.system(f'python {basedir}/evaluation/scripts/pipeline_rex_test/src/rex.py --data {data} {paths} -o {outpath}')
+        if not os.path.exists(outpath+'.png') and not os.path.exists(outpath+'_pol.png'):
+            os.system(f'python {basedir}/evaluation/scripts/pipeline/src/rex.py --data {data} {paths} -o {outpath}')
+            
+    # VIDA
+    for pipe in colors.keys():
+        if pipe!='truth':
+            inputdir  = f'{basedir}/{subdir}/{pipe}/{modelname[m][pipe]}_{noise}/'
+            outputdir =f'{basedir}/evaluation/{resultsdir}/VIDA/{pipe}/{modelname[m][pipe]}_{noise}/'
+        else:
+            inputdir  = f'{basedir}/{subdir}/{pipe}/{modelname[m][pipe]}/'
+            outputdir =f'{basedir}/evaluation/{resultsdir}/VIDA/{pipe}/{modelname[m][pipe]}/'
+    
+        if not os.path.exists(outputdir):
+            os.makedirs(outputdir)
+            os.system(f'julia -p {cores} {basedir}/evaluation/scripts/pipeline/src/movie_extractor_parallel.jl --inputdir {inputdir} --outputdir {outputdir} --template {modelsvida[m]} --stride {cores} --scat {scat}')
+            
+    if scat!='none':       
+        truthcsv  = f'{basedir}/evaluation/{resultsdir}/VIDA/truth/{modelname[m]["truth"]}/{modelname[m]["truth"]}_{scat}_vida.csv'
+        kinecsv    = f'{basedir}/evaluation/{resultsdir}/VIDA/kine/{modelname[m]["kine"]}_{noise}/{modelname[m]["kine"]}_1_{scat}_vida.csv'
+        starcsv   = f'{basedir}/evaluation/{resultsdir}/VIDA/starwarps/{modelname[m]["starwarps"]}_{noise}/{modelname[m]["starwarps"]}_1_{scat}_vida.csv'
+        ehtcsv    = f'{basedir}/evaluation/{resultsdir}/VIDA/ehtim/{modelname[m]["ehtim"]}_{noise}/{modelname[m]["ehtim"]}_1_{scat}_vida.csv'
+        dogcsv    = f'{basedir}/evaluation/{resultsdir}/VIDA/doghit/{modelname[m]["doghit"]}_{noise}/{modelname[m]["doghit"]}_1_{scat}_vida.csv'
+        ngcsv     = f'{basedir}/evaluation/{resultsdir}/VIDA/ngmem/{modelname[m]["ngmem"]}_{noise}/{modelname[m]["ngmem"]}_1_{scat}_vida.csv'
+        rescsv    = f'{basedir}/evaluation/{resultsdir}/VIDA/resolve/{modelname[m]["resolve"]}_{noise}/{modelname[m]["resolve"]}_1_{scat}_vida.csv'
+    else:
+        truthcsv  = f'{basedir}/evaluation/{resultsdir}/VIDA/truth/{modelname[m]["truth"]}/{modelname[m]["truth"]}_vida.csv'
+        kinecsv   = f'{basedir}/evaluation/{resultsdir}/VIDA/kine/{modelname[m]["kine"]}_{noise}/{modelname[m]["kine"]}_1_vida.csv'
+        starcsv   = f'{basedir}/evaluation/{resultsdir}/VIDA/starwarps/{modelname[m]["starwarps"]}_{noise}/{modelname[m]["starwarps"]}_1_vida.csv'
+        ehtcsv    = f'{basedir}/evaluation/{resultsdir}/VIDA/ehtim/{modelname[m]["ehtim"]}_{noise}/{modelname[m]["ehtim"]}_1_vida.csv'
+        dogcsv    = f'{basedir}/evaluation/{resultsdir}/VIDA/doghit/{modelname[m]["doghit"]}_{noise}/{modelname[m]["doghit"]}_1_vida.csv'
+        ngcsv     = f'{basedir}/evaluation/{resultsdir}/VIDA/ngmem/{modelname[m]["ngmem"]}_{noise}/{modelname[m]["ngmem"]}_1_vida.csv'
+        rescsv    = f'{basedir}/evaluation/{resultsdir}/VIDA/resolve/{modelname[m]["resolve"]}_{noise}/{modelname[m]["resolve"]}_1_vida.csv'
+       
+    
+    outpath =f'{basedir}/evaluation/{resultsdir}/plots/vida_{modelname[m]["kine"]}'
+    paths=f'--truthcsv {truthcsv} --kinecsv {kinecsv} --dogcsv {dogcsv} --ngcsv {ngcsv} --rescsv {rescsv}'
+    if not os.path.exists(outpath+'.png'):    
+        os.system(f'python {basedir}/evaluation/scripts/pipeline/src/vida.py --model {m} {paths} -o {outpath}')
           
 ##############################################################################################
