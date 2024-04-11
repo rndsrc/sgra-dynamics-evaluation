@@ -259,19 +259,17 @@ for m in models:
                 os.system(f'julia {basedir}/evaluation/scripts/sgra-dynamics-evaluation/src/ring_extractor.jl --in {path} --out {outpath}')
                 print(f'{os.path.basename(outpath)} created!')
          
-        ######################
-        # For Nick: Below this
-        ######################
-           
         # Run cylinder on all interpolated movies
-        if scat!='none':       
-            pathmov  = f'{basedir}/evalutation/{resultsdir}/interpolated_movies/kine/{modelname[m]["kine"]}_{noise}/{modelname[m]["kine"]}_1_{scat}.hdf5'
-            pathmov2 = f'{basedir}/evalutation/{resultsdir}/interpolated_movies/starwarps/{modelname[m]["starwarps"]}_{noise}/{modelname[m]["starwarps"]}_1_{scat}.hdf5'
-            pathmov3 = f'{basedir}/evalutation/{resultsdir}/interpolated_movies/ehtim/{modelname[m]["ehtim"]}_{noise}/{modelname[m]["ehtim"]}_1_{scat}.hdf5'
-            pathmov4 = f'{basedir}/evalutation/{resultsdir}/interpolated_movies/doghit/{modelname[m]["doghit"]}_{noise}/{modelname[m]["doghit"]}_1_{scat}.hdf5'
-            pathmov5 = f'{basedir}/evalutation/{resultsdir}/interpolated_movies/ngmem/{modelname[m]["ngmem"]}_{noise}/{modelname[m]["ngmem"]}_1_{scat}.hdf5'
-            pathmov6 = f'{basedir}/evalutation/{resultsdir}/interpolated_movies/resolve/{modelname[m]["resolve"]}_{noise}/{modelname[m]["resolve"]}_1_{scat}.hdf5'
+        if scat!='none':   
+            pathmovt = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/truth/{modelname[m]["truth"]}/{modelname[m]["truth"]}_{scat}.hdf5'
+            pathmov  = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/kine/{modelname[m]["kine"]}_{noise}/{modelname[m]["kine"]}_1_{scat}.hdf5'
+            pathmov2 = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/starwarps/{modelname[m]["starwarps"]}_{noise}/{modelname[m]["starwarps"]}_1_{scat}.hdf5'
+            pathmov3 = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/ehtim/{modelname[m]["ehtim"]}_{noise}/{modelname[m]["ehtim"]}_1_{scat}.hdf5'
+            pathmov4 = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/doghit/{modelname[m]["doghit"]}_{noise}/{modelname[m]["doghit"]}_1_{scat}.hdf5'
+            pathmov5 = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/ngmem/{modelname[m]["ngmem"]}_{noise}/{modelname[m]["ngmem"]}_1_{scat}.hdf5'
+            pathmov6 = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/resolve/{modelname[m]["resolve"]}_{noise}/{modelname[m]["resolve"]}_1_{scat}.hdf5'
         else:
+            pathmovt = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/truth/{modelname[m]["truth"]}/{modelname[m]["truth"]}.hdf5'
             pathmov  = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/kine/{modelname[m]["kine"]}_{noise}/{modelname[m]["kine"]}_1.hdf5'
             pathmov2 = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/starwarps/{modelname[m]["starwarps"]}_{noise}/{modelname[m]["starwarps"]}_1.hdf5'
             pathmov3 = f'{basedir}/evaluation/{resultsdir}/interpolated_movies/ehtim/{modelname[m]["ehtim"]}_{noise}/{modelname[m]["ehtim"]}_1.hdf5'
@@ -282,8 +280,16 @@ for m in models:
         # Run cylinder on all these interpolated movie paths
         paths=[pathmovt, pathmov, pathmov4, pathmov5, pathmov6]
         
-        #for path in paths:
+        for modelpath in paths:
             #os.system(f'python {basedir}/evaluation/scripts/sgra-dynamics-evaluation/src/cylinder.py')
+            
+            ringpath = modelpath.replace('interpolated_movies', 'averaged_movies')
+            ringpath = ringpath[:-5]+'.csv'
+            
+            outpath = modelpath[:-5]
+
+            # os.system(f'python {basedir}/evaluation/scripts/sgra-dynamics-evaluation/src/cylinder.py --model {modelpath} --ring {ringpath} --out {outpath}')
+            os.system(f'python {basedir}/evaluation/scripts/sgra-dynamics-evaluation/src/cylinder.py {modelpath} {ringpath} {outpath}')
     
           
 ##############################################################################################
