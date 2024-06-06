@@ -1,11 +1,13 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 25 Mar 2024
+# Author: Rohan Dahale, Date: 14 May 2024
 ######################################################################
 
 # Import libraries
 import numpy as np
 import pandas as pd
 import ehtim as eh
+import ehtim.scattering.stochastic_optics as so
+from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
@@ -20,13 +22,12 @@ def create_parser():
     p.add_argument('-d', '--data', type=str, 
                    default='hops_3601_SGRA_LO_netcal_LMTcal_10s_ALMArot_dcal.uvfits', 
                    help='string of uvfits to data to compute chi2')
-    p.add_argument('--truthmv', type=str, default='', help='path of truth .hdf5')
-    p.add_argument('--kinemv',  type=str, default='', help='path of kine .hdf5')
-    p.add_argument('--starmv',  type=str, default='', help='path of starwarps .hdf5')
-    p.add_argument('--ehtmv',   type=str, default='', help='path of ehtim .hdf5')
-    p.add_argument('--dogmv',   type=str, default='', help='path of doghit .hdf5')
-    p.add_argument('--ngmv',    type=str, default='', help='path of ngmem .hdf5')
-    p.add_argument('--resmv',   type=str, default='', help='path of resolve .hdf5')
+    p.add_argument('--truthmv', type=str, default='none', help='path of truth .hdf5')
+    p.add_argument('--kinemv',  type=str, default='none', help='path of kine .hdf5')
+    p.add_argument('--ehtmv',   type=str, default='none', help='path of ehtim .hdf5')
+    p.add_argument('--dogmv',   type=str, default='none', help='path of doghit .hdf5')
+    p.add_argument('--ngmv',    type=str, default='none', help='path of ngmem .hdf5')
+    p.add_argument('--resmv',   type=str, default='none', help='path of resolve .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
                    help='name of output file with path')
     p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
@@ -47,7 +48,7 @@ plt.rcParams["xtick.direction"]="in"
 plt.rcParams["ytick.direction"]="in"
 plt.rcParams["ytick.major.size"]=5
 plt.rcParams["ytick.minor.size"]=2.5
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
 mpl.rcParams["ytick.labelsize"] = 18
@@ -65,15 +66,19 @@ mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
 
 # Time average data to 60s
 obs = eh.obsdata.load_uvfits(args.data)
-obs = obs.avg_coherent(60.0)
-
+obs.add_scans()
 # From GYZ: If data used by pipelines is descattered (refractive + diffractive),
 # Add 2% error and deblur original data.
 if args.scat=='dsct':
-    obs = obs.add_fractional_noise(0.02)
-    import ehtim.scattering.stochastic_optics as so
+    # Refractive Scattering
+    #obs = obs.add_fractional_noise(0.02)
+    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
+    # Diffractive Scattering
     sm = so.ScatteringModel()
     obs = sm.Deblur_obs(obs)
+
+obs = obs.avg_coherent(60.0)
+obs = obs.add_fractional_noise(0.01)
 
 obs.add_scans()
 times = []
@@ -83,28 +88,19 @@ obslist = obs.split_obs()
 ######################################################################
     
 pathmovt  = args.truthmv
-pathmov  = args.kinemv
-pathmov2 = args.starmv
-pathmov3 = args.ehtmv
-pathmov4 = args.dogmv
-pathmov5 = args.ngmv
-pathmov6 = args.resmv
-
 outpath = args.outpath
 
 paths={}
-if args.kinemv!='':
+if args.kinemv!='none':
     paths['kine']=args.kinemv
-if args.starmv!='':
-    paths['starwarps']=args.starmv
-if args.ehtmv!='':
-    paths['ehtim']=args.ehtmv
-if args.dogmv!='':
-    paths['doghit']=args.dogmv 
-if args.ngmv!='':
-    paths['ngmem']=args.ngmv
-if args.resmv!='':
+if args.resmv!='none':
     paths['resolve']=args.resmv
+if args.ehtmv!='none':
+    paths['ehtim']=args.ehtmv
+if args.dogmv!='none':
+    paths['doghit']=args.dogmv 
+if args.ngmv!='none':
+    paths['ngmem']=args.ngmv
 ######################################################################
 
 # Truncating the times and obslist based on submitted movies
@@ -128,22 +124,20 @@ for t in y:
     obslist_t.append(obslist_tn[t[0]])
 ######################################################################
 
-colors = {   
-            'kine'     : 'darkorange',
-            'starwarps': 'xkcd:azure',
+colors = { 
+            'kine'     : 'xkcd:azure',
+            'resolve'  : 'tab:orange',
             'ehtim'    : 'forestgreen',
             'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson',
-            'resolve'  : 'hotpink'
+            'ngmem'    : 'crimson'
         }
 
-labels = {  
+labels = {
             'kine'     : 'kine',
-            'starwarps': 'StarWarps',
+            'resolve'  : 'resolve',
             'ehtim'    : 'ehtim',
             'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM',
-            'resolve'  : 'resolve'
+            'ngmem'    : 'ngMEM'
         }
 
 fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(28,8), sharex=True)
@@ -187,15 +181,23 @@ for pol in pollist:
         if pol=='I':
             if len(im.ivec)>0:
                 polpaths[p]=paths[p]
-        elif pol=='Q' and p!='starwarps':
+            else:
+                print('Parse a vaild pol value')
+        elif pol=='Q':
             if len(im.qvec)>0:
                 polpaths[p]=paths[p]
-        elif pol=='U' and p!='starwarps':
+            else:
+                print('Parse a vaild pol value')
+        elif pol=='U':
             if len(im.uvec)>0:
                 polpaths[p]=paths[p]
-        elif pol=='V' and p!='starwarps':
+            else:
+                print('Parse a vaild pol value')
+        elif pol=='V':
             if len(im.vvec)>0:
                 polpaths[p]=paths[p]
+            else:
+                print('Parse a vaild pol value')
         else:
             print('Parse a vaild pol value')
 
@@ -249,8 +251,8 @@ table.auto_set_font_size(False)
 table.set_fontsize(18)
 for c in table.get_children():
     c.set_edgecolor('none')
-    c.set_text_props(color='white')
+    c.set_text_props(color='black')
     c.set_facecolor('none')
-    c.set_edgecolor('white')
+    c.set_edgecolor('black')
 ax[0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3.5, 1.2), markerscale=5.0)
 plt.savefig(args.outpath+'.png', bbox_inches='tight', dpi=300)

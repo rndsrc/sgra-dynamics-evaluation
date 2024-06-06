@@ -1,11 +1,13 @@
 ######################################################################
-# Author: Ilje Cho, Rohan Dahale, Date: 07 Mar 2024
+# Author: Ilje Cho, Rohan Dahale, Date: 14 May 2024
 ######################################################################
 
 # Import libraries
 import numpy as np
 import pandas as pd
 import ehtim as eh
+import ehtim.scattering.stochastic_optics as so
+from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
@@ -25,12 +27,11 @@ def create_parser():
     p.add_argument('-d', '--data', type=str, 
                    default='hops_3601_SGRA_LO_netcal_LMTcal_10s_ALMArot_dcal.uvfits', 
                    help='string of uvfits to data to compute chi2')
-    p.add_argument('--kinemv', type=str, default='', help='path of kine .hdf5')
-    p.add_argument('--starmv', type=str, default='', help='path of starwarps .hdf5')
-    p.add_argument('--ehtmv',  type=str, default='', help='path of ehtim .hdf5')
-    p.add_argument('--dogmv',  type=str, default='', help='path of doghit .hdf5')
-    p.add_argument('--ngmv',   type=str, default='', help='path of ngmem .hdf5')
-    p.add_argument('--resmv',  type=str, default='',help='path of resolve .hdf5')
+    p.add_argument('--kinemv', type=str, default='none', help='path of kine .hdf5')
+    p.add_argument('--ehtmv',  type=str, default='none', help='path of ehtim .hdf5')
+    p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
+    p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
+    p.add_argument('--resmv',  type=str, default='none',help='path of resolve .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
                    help='name of output file with path')
     p.add_argument('--pol',  type=str, default='I',help='I,Q,U,V')
@@ -50,7 +51,7 @@ mpl.rcParams['figure.dpi']=300
 #mpl.rcParams["mathtext.default"] = 'regular'
 plt.rcParams["xtick.direction"]="in"
 plt.rcParams["ytick.direction"]="in"
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
 mpl.rcParams["ytick.labelsize"] = 18
@@ -69,15 +70,19 @@ mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
 
 # Time average data to 60s
 obs = eh.obsdata.load_uvfits(args.data)
-obs = obs.avg_coherent(60.0)
-
+obs.add_scans()
 # From GYZ: If data used by pipelines is descattered (refractive + diffractive),
 # Add 2% error and deblur original data.
 if args.scat=='dsct':
-    obs = obs.add_fractional_noise(0.02)
-    import ehtim.scattering.stochastic_optics as so
+    # Refractive Scattering
+    #obs = obs.add_fractional_noise(0.02)
+    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
+    # Diffractive Scattering
     sm = so.ScatteringModel()
     obs = sm.Deblur_obs(obs)
+
+obs = obs.avg_coherent(60.0)
+obs = obs.add_fractional_noise(0.01)
 
 if args.pol=='I':
     clphs = pd.DataFrame(obs.c_phases(count='max', vtype='vis'))
@@ -96,31 +101,21 @@ for t in obs.scans:
     times.append(t[0])
 obslist = obs.split_obs()
 ######################################################################
-
-pathmov  = args.kinemv
-pathmov2 = args.starmv
-pathmov3 = args.ehtmv
-pathmov4 = args.dogmv
-pathmov5 = args.ngmv
-pathmov6 = args.resmv
-
 outpath = args.outpath
 pol = args.pol
 
 paths={}
 
-if args.kinemv!='':
+if args.kinemv!='none':
     paths['kine']=args.kinemv
-if args.starmv!='':
-    paths['starwarps']=args.starmv
-if args.ehtmv!='':
-    paths['ehtim']=args.ehtmv
-if args.dogmv!='':
-    paths['doghit']=args.dogmv 
-if args.ngmv!='':
-    paths['ngmem']=args.ngmv
-if args.resmv!='':
+if args.resmv!='none':
     paths['resolve']=args.resmv
+if args.ehtmv!='none':
+    paths['ehtim']=args.ehtmv
+if args.dogmv!='none':
+    paths['doghit']=args.dogmv 
+if args.ngmv!='none':
+    paths['ngmem']=args.ngmv
     
 # Truncating the times and obslist based on submitted movies
 obslist_tn=[]
@@ -150,31 +145,29 @@ for p in paths.keys():
     
     if pol=='I':
        if len(im.ivec)>0:
-        polpaths[p]=paths[p]
-    elif pol=='Q' and p!='starwarps':
+            polpaths[p]=paths[p]
+    elif pol=='Q':
         if len(im.qvec)>0:
             polpaths[p]=paths[p]
-    elif pol=='U' and p!='starwarps':
+    elif pol=='U':
         if len(im.uvec)>0:
             polpaths[p]=paths[p]
-    elif pol=='V' and p!='starwarps':
+    elif pol=='V':
         if len(im.vvec)>0:
             polpaths[p]=paths[p]
     else:
         print('Parse a vaild pol value')
     
 colors = {   
-            'kine'     : 'darkorange',
-            'starwarps': 'xkcd:azure',
+            'kine'     : 'xkcd:azure',
             'ehtim'    : 'forestgreen',
             'doghit'   : 'darkviolet',
             'ngmem'    : 'crimson',
-            'resolve'  : 'hotpink'
+            'resolve'  : 'tab:orange'
         }
 
 labels = {  
             'kine'     : 'kine',
-            'starwarps': 'StarWarps',
             'ehtim'    : 'ehtim',
             'doghit'   : 'DoG-HiT',
             'ngmem'    : 'ngMEM',
@@ -269,7 +262,7 @@ for i in tqdm(range(numplt)):
     # closure phase
     subtab  = select_triangle(ctab, tri_list[i][0], tri_list[i][1], tri_list[i][2])
     axs[i].errorbar(subtab['time'], subtab['cphase'], yerr=subtab['sigmacp'],
-                    c='white', mec='white', marker='o', ls="None", ms=5, alpha=0.5)
+                    c='black', mec='black', marker='o', ls="None", ms=5, alpha=0.5)
     
     # Model
     for pipe in polpaths.keys():
@@ -293,7 +286,7 @@ for i in tqdm(range(numplt)):
     if fix_xax:
         axs[i].set_xlim(xmin-0.5, xmax+0.5)
 
-axs[0].text(10.5, 260, f'Stokes: {pol}', color='white', fontsize=18)
+axs[0].text(10.5, 260, f'Stokes: {pol}', color='black', fontsize=18)
 
 fig.subplots_adjust(top=0.93)
 plt.savefig(args.outpath+'.png', bbox_inches='tight', dpi=300)

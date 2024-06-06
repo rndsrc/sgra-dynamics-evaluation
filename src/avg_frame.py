@@ -1,3 +1,7 @@
+######################################################################
+# Author: Rohan Dahale, Date: 14 May 2024
+######################################################################
+
 import ehtim as eh
 import argparse
 import os
@@ -6,8 +10,8 @@ import glob
 # Parsing arguments function
 def create_parser():
     p = argparse.ArgumentParser()
-    p.add_argument('-i', '--inputfolder', type=str, default='./hdf5/', help='path of input folder with original hdf5 files')
-    p.add_argument('-o', '--outputfolder', type=str, default='./fits/', help='path of output folder to save average frame fits files')
+    p.add_argument('-i', '--input', type=str, help='path of input original hdf5 file')
+    p.add_argument('-o', '--output', type=str, help='path of output average frame fits file')
     p.add_argument('-t', '--truth', action='store_true', help='If hdf5 is unblurred truth')
     return p
 
@@ -39,13 +43,8 @@ mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
 # List of parsed arguments
 args = create_parser().parse_args()
 
-hdf5list = glob.glob(args.inputfolder +'/*.hdf5')
-
-for hdf5file in hdf5list:
-    mv = eh.movie.load_hdf5(hdf5file)
-    if args.truth:
-        mv = mv.blur_circ(fwhm_x=15*eh.RADPERUAS,fwhm_t=0)
-    im = mv.avg_frame()
-    im.save_fits(args.outputfolder + '/' +os.path.basename(hdf5file)[:-5]+'.fits')
-    
-    im.display(export_pdf=args.outputfolder + '/' +os.path.basename(hdf5file)[:-5]+'.png', has_title=False, has_cbar=False, label_type='scale')
+mv = eh.movie.load_hdf5(args.input)
+if args.truth:
+    mv = mv.blur_circ(fwhm_x=15*eh.RADPERUAS,fwhm_t=0)
+im = mv.avg_frame()
+im.save_fits(args.output)

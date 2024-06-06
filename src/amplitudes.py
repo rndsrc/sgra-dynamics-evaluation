@@ -1,11 +1,13 @@
 ######################################################################
-# Author: Ilje Cho, Rohan Dahale, Date: 14 Mar 2024
+# Author: Ilje Cho, Rohan Dahale, Date: 14 May 2024
 ######################################################################
 
 # Import libraries
 import numpy as np
 import pandas as pd
 import ehtim as eh
+import ehtim.scattering.stochastic_optics as so
+from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
@@ -24,13 +26,12 @@ def create_parser():
     p.add_argument('-d', '--data', type=str, 
                    default='hops_3601_SGRA_LO_netcal_LMTcal_10s_ALMArot_dcal.uvfits', 
                    help='string of uvfits to data to compute chi2')
-    p.add_argument('--kinemv', type=str, default='', help='path of kine .hdf5')
-    p.add_argument('--starmv', type=str, default='', help='path of starwarps .hdf5')
-    p.add_argument('--ehtmv',  type=str, default='', help='path of ehtim .hdf5')
-    p.add_argument('--dogmv',  type=str, default='', help='path of doghit .hdf5')
-    p.add_argument('--ngmv',   type=str, default='', help='path of ngmem .hdf5')
-    p.add_argument('--resmv',  type=str, default='', help='path of resolve .hdf5')
-    p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
+    p.add_argument('--kinemv', type=str, default='none', help='path of kine .hdf5')
+    p.add_argument('--ehtmv',  type=str, default='none', help='path of ehtim .hdf5')
+    p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
+    p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
+    p.add_argument('--resmv',  type=str, default='none', help='path of resolve .hdf5')
+    p.add_argument('-o', '--outpath', type=str, default='./amp.png', 
                    help='name of output file with path')
     p.add_argument('--pol',  type=str, default='I',help='I,Q,U,V')
     p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
@@ -49,7 +50,7 @@ mpl.rcParams['figure.dpi']=300
 #mpl.rcParams["mathtext.default"] = 'regular'
 plt.rcParams["xtick.direction"]="in"
 plt.rcParams["ytick.direction"]="in"
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
@@ -70,16 +71,19 @@ mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
 
 # Time average data to 60s
 obs = eh.obsdata.load_uvfits(args.data)
-obs = obs.avg_coherent(60.0)
-
+obs.add_scans()
 # From GYZ: If data used by pipelines is descattered (refractive + diffractive),
 # Add 2% error and deblur original data.
 if args.scat=='dsct':
-    obs = obs.add_fractional_noise(0.02)
-    import ehtim.scattering.stochastic_optics as so
+    # Refractive Scattering
+    #obs = obs.add_fractional_noise(0.02)
+    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
+    # Diffractive Scattering
     sm = so.ScatteringModel()
     obs = sm.Deblur_obs(obs)
 
+obs = obs.avg_coherent(60.0)
+obs = obs.add_fractional_noise(0.01)
 
 amp = pd.DataFrame(obs.data)
 
@@ -90,29 +94,20 @@ for t in obs.scans:
 obslist = obs.split_obs()
 ######################################################################
 
-pathmov  = args.kinemv
-pathmov2 = args.starmv
-pathmov3 = args.ehtmv
-pathmov4 = args.dogmv
-pathmov5 = args.ngmv
-pathmov6 = args.resmv
-
 outpath = args.outpath
 pol = args.pol
 
 paths={}
 
-if args.kinemv!='':
+if args.kinemv!='none':
     paths['kine']=args.kinemv
-if args.starmv!='':
-    paths['starwarps']=args.starmv
-if args.ehtmv!='':
+if args.ehtmv!='none':
     paths['ehtim']=args.ehtmv
-if args.dogmv!='':
+if args.dogmv!='none':
     paths['doghit']=args.dogmv 
-if args.ngmv!='':
+if args.ngmv!='none':
     paths['ngmem']=args.ngmv
-if args.resmv!='':
+if args.resmv!='none':
     paths['resolve']=args.resmv
     
 # Truncating the times and obslist based on submitted movies
@@ -142,37 +137,44 @@ for p in paths.keys():
     im=mv.get_image(times[0])
     
     if pol=='I':
-       if len(im.ivec)>0:
-        polpaths[p]=paths[p]
-    elif pol=='Q' and p!='starwarps':
+        if len(im.ivec)>0:
+            polpaths[p]=paths[p]
+        else:
+            print('Parse a vaild pol value')
+    elif pol=='Q':
         if len(im.qvec)>0:
             polpaths[p]=paths[p]
-    elif pol=='U' and p!='starwarps':
+        else:
+            print('Parse a vaild pol value')
+    elif pol=='U':
         if len(im.uvec)>0:
             polpaths[p]=paths[p]
-    elif pol=='V' and p!='starwarps':
+        else:
+            print('Parse a vaild pol value')
+    elif pol=='V':
         if len(im.vvec)>0:
             polpaths[p]=paths[p]
+        else:
+            print('Parse a vaild pol value')
     else:
         print('Parse a vaild pol value')
     
-colors = {   
-            'kine'     : 'darkorange',
-            'starwarps': 'xkcd:azure',
+colors = { 
+            'kine'     : 'xkcd:azure',
+            'resolve'  : 'tab:orange',
             'ehtim'    : 'forestgreen',
             'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson',
-            'resolve'  : 'hotpink'
+            'ngmem'    : 'crimson'
         }
 
-labels = {  
+labels = {
             'kine'     : 'kine',
-            'starwarps': 'StarWarps',
+            'resolve'  : 'resolve',
             'ehtim'    : 'ehtim',
             'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM',
-            'resolve'  : 'resolve'
+            'ngmem'    : 'ngMEM'
         }
+
 
 
 def select_baseline(tab, st1, st2):
@@ -257,17 +259,16 @@ for i in range(1,numplt+1):
 for i in tqdm(range(numplt)):
     subtab  = select_baseline(vtab, bs_list[i][0], bs_list[i][1])
     axs[i].errorbar(subtab['time'], abs(subtab[vis]), yerr=subtab[sigma],
-                    c='white', mec='white', marker='o', ls="None", ms=5, alpha=0.5)
+                    c='black', mec='black', marker='o', ls="None", ms=5, alpha=0.5)
 
     for pipe in polpaths.keys():
-        mv = eh.movie.load_hdf5(polpaths[p])
+        mv = eh.movie.load_hdf5(polpaths[pipe])
         amp_mod_time, amp_mod_win = mov_amp[pipe]
         
         axs[i].errorbar(amp_mod_time[bs_list[i]], amp_mod_win[bs_list[i]], 
                         c=colors[pipe], marker='o', ms=2.5, ls="none", label=labels[pipe], alpha=0.5)
     
 
-    axs[i].axhline(y=0, c='k', ls=':')
     axs[i].set_title("%s-%s" %(bs_list[i][0], bs_list[i][1]), fontsize=18)
 
     if i == 0:

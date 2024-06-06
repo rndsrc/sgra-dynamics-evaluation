@@ -17,14 +17,13 @@ import glob
 # Parsing arguments function
 def create_parser():
     p = argparse.ArgumentParser()
-    p.add_argument('--model',    type=str, default='', help='type of model: crescent, ring, disk, edisk, double, point, mring_1_4')
-    p.add_argument('--truthcsv', type=str, default='', help='path of truth .csv')
-    p.add_argument('--kinecsv',  type=str, default='', help='path of kine .csv')
-    p.add_argument('--starcsv',  type=str, default='', help='path of starwarps .csv')
-    p.add_argument('--ehtcsv',   type=str, default='', help='path of ehtim .csv')
-    p.add_argument('--dogcsv',   type=str, default='', help='path of doghit .csv')
-    p.add_argument('--ngcsv',    type=str, default='', help='path of ngmem .csv')
-    p.add_argument('--rescsv',   type=str, default='', help='path of resolve .csv')
+    p.add_argument('--model',    type=str, default='none', help='type of model: crescent, ring, disk, edisk, double, point, mring_1_4')
+    p.add_argument('--truthcsv', type=str, default='none', help='path of truth .csv')
+    p.add_argument('--kinecsv',  type=str, default='none', help='path of kine .csv')
+    p.add_argument('--ehtcsv',   type=str, default='none', help='path of ehtim .csv')
+    p.add_argument('--dogcsv',   type=str, default='none', help='path of doghit .csv')
+    p.add_argument('--ngcsv',    type=str, default='none', help='path of ngmem .csv')
+    p.add_argument('--rescsv',   type=str, default='none', help='path of resolve .csv')
     p.add_argument('-o', '--outpath', type=str, default='./vida.png',
                    help='name of output file with path')
 
@@ -43,7 +42,7 @@ mpl.rcParams['figure.dpi']=300
 #mpl.rcParams["mathtext.default"] = 'regular'
 plt.rcParams["xtick.direction"]="in"
 plt.rcParams["ytick.direction"]="in"
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
 mpl.rcParams["ytick.labelsize"] = 18
@@ -60,52 +59,58 @@ font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
 mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
 ######################################################################
 
-pathmovt = args.truthcsv
-pathmov  = args.kinecsv
-pathmov2 = args.starcsv
-pathmov3 = args.ehtcsv
-pathmov4 = args.dogcsv
-pathmov5 = args.ngcsv
-pathmov6 = args.rescsv
-
 outpath = args.outpath
 
 paths={}
-if args.truthcsv!='':
+if args.truthcsv!='none':
     paths['truth']=args.truthcsv
-if args.kinecsv!='':
+if args.kinecsv!='none':
     paths['kine']=args.kinecsv
-if args.starcsv!='':
-    paths['starwarps']=args.starcsv
-if args.ehtcsv!='':
-    paths['ehtim']=args.ehtcsv
-if args.dogcsv!='':
-    paths['doghit']=args.dogcsv
-if args.ngcsv!='':
-    paths['ngmem']=args.ngcsv
-if args.rescsv!='':
+if args.rescsv!='none':
     paths['resolve']=args.rescsv
+if args.ehtcsv!='none':
+    paths['ehtim']=args.ehtcsv
+if args.dogcsv!='none':
+    paths['doghit']=args.dogcsv
+if args.ngcsv!='none':
+    paths['ngmem']=args.ngcsv
+    
 ######################################################################
 colors = {
-            'truth'    : 'white',
-            'kine'     : 'darkorange',
-            'starwarps': 'xkcd:azure',
+            'truth'    : 'black',
+            'kine'     : 'xkcd:azure',
+            'resolve'  : 'tab:orange',
             'ehtim'    : 'forestgreen',
             'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson',
-            'resolve'  : 'hotpink'
+            'ngmem'    : 'crimson'
         }
 
 labels = {
             'truth'    : 'Truth',
             'kine'     : 'kine',
-            'starwarps': 'StarWarps',
+            'resolve'  : 'resolve',
             'ehtim'    : 'ehtim',
             'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM',
-            'resolve'  : 'resolve'
+            'ngmem'    : 'ngMEM'
         }
 
+mfcs = {
+            'truth'    : 'none',
+            'kine'     : 'xkcd:azure',
+            'resolve'  : 'tab:orange',
+            'ehtim'    : 'forestgreen',
+            'doghit'   : 'darkviolet',
+            'ngmem'    : 'crimson'
+        }
+
+mss = {
+            'truth'    : 10,
+            'kine'     : 5,
+            'resolve'  : 5,
+            'ehtim'    : 5,
+            'doghit'   : 5,
+            'ngmem'    : 5 
+        }
 
 ######################################################################
 # Plots
@@ -115,7 +120,7 @@ model=args.model
 
 if model=='crescent':
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(14,6), sharex=True)
-    alpha = 0.5
+    alpha = 1.0
     lc='grey'
 
     ax[0,0].set_ylabel('Diameter $d (\mu$as)')
@@ -158,12 +163,15 @@ if model=='crescent':
         t = df['time']
 
         mc=colors[p]
-        ax[0,0].plot(t, d,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
-        ax[0,1].plot(t, w0, marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,0].plot(t, n,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,1].plot(t, a,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
+        mfc=mfcs[p]
+        ms=mss[p]
+        
+        ax[0,0].plot(t, d,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
+        ax[0,1].plot(t, w0, marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,0].plot(t, n,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,1].plot(t, a,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
 
-    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=5.0)
+    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
 
 elif model=='ring':
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(14,3), sharex=True)
@@ -193,10 +201,13 @@ elif model=='ring':
         t = df['time']
 
         mc=colors[p]
-        ax[0].plot(t, d,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
-        ax[1].plot(t, w0, marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
+        mfc=mfcs[p]
+        ms=mss[p]
         
-    ax[0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=5.0)
+        ax[0].plot(t, d,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
+        ax[1].plot(t, w0, marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        
+    ax[0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
 
 elif model=='disk':
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(14,3), sharex=True)
@@ -226,10 +237,12 @@ elif model=='disk':
         t = df['time']
 
         mc=colors[p]
-        ax[0].plot(t, d,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
-        ax[1].plot(t, w0, marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
+        mfc=mfcs[p]
+        ms=mss[p]
+        ax[0].plot(t, d,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
+        ax[1].plot(t, w0, marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
         
-    ax[0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=5.0)
+    ax[0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
 
 elif model=='edisk':
     
@@ -276,12 +289,14 @@ elif model=='edisk':
         t = df['time']
 
         mc=colors[p]
-        ax[0,0].plot(t, d,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
-        ax[0,1].plot(t, w0, marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,0].plot(t, e,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,1].plot(t, n,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
+        mfc=mfcs[p]
+        ms=mss[p]
+        ax[0,0].plot(t, d,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
+        ax[0,1].plot(t, w0, marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,0].plot(t, e,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,1].plot(t, n,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
 
-    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=5.0)
+    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
 
 elif model=='double':
     
@@ -338,12 +353,14 @@ elif model=='double':
         t = df['time']
 
         mc=colors[p]
-        ax[0,0].plot(t, d1,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
-        ax[0,1].plot(t, d2,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,0].plot(t, r0,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,1].plot(t, pa,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
+        mfc=mfcs[p]
+        ms=mss[p]
+        ax[0,0].plot(t, d1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
+        ax[0,1].plot(t, d2,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,0].plot(t, r0,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,1].plot(t, pa,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
 
-    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=5.0)
+    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
 
 elif model=='point':
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(14,6), sharex=True)
@@ -399,12 +416,14 @@ elif model=='point':
         t = df['time']
 
         mc=colors[p]
-        ax[0,0].plot(t, d1,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
-        ax[0,1].plot(t, d2,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,0].plot(t, r0,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
-        ax[1,1].plot(t, pa,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1, color=lc, alpha=alpha)
+        mfc=mfcs[p]
+        ms=mss[p]
+        ax[0,0].plot(t, d1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha, label=labels[p])
+        ax[0,1].plot(t, d2,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,0].plot(t, r0,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
+        ax[1,1].plot(t, pa,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1, color=lc, alpha=alpha)
 
-    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=5.0)
+    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
     
 else:
     print('Model not in the list of plot functions')

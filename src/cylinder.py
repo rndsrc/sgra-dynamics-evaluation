@@ -1,7 +1,8 @@
 ######################################################################
 # Author: Nick Conroy, Date: 04 April 2024
 # A cleaned version of the script used in "Rotation in Event Horizon Telescope Movies", by Conroy et al. 2023
-# Optional variables to adjust when running on new simulations: folder names (plot_dir, output_dir), xi_crit
+# Optional variables to adjust when running on new simulations: folder names (file_path, output_dir), xi_crit
+# (which is the threshold between autocorrelation signal/noise), and the cylinder we analyze (e.g. qsn vs qs)
 ######################################################################
 
 # Import libraries
@@ -27,7 +28,7 @@ import matplotlib as mpl
 #mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
 mpl.rcParams['figure.dpi']=300
 #mpl.rcParams["mathtext.default"] = 'regular'
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
@@ -183,12 +184,20 @@ r_pix = r * (N/FOV_uas)
 x0 = x0 * (N/FOV_uas)
 y0 = y0 * (N/FOV_uas)
 
+"""
 ishift = -y0                        ## should be right for VIDA automated output
 jshift = -x0
 icirc = ishift + r_pix*np.sin(pa) 
 jcirc = jshift+ r_pix*np.cos(pa)
 x = (icirc )*dx
 y = (jcirc )*dy
+"""
+ishift = -y0  + M/2                      ## should be right for VIDA automated output
+jshift = -x0  + N/2                      ## should be right for VIDA automated output
+icirc = ishift + r_pix*np.sin(pa)
+jcirc = jshift+ r_pix*np.cos(pa)
+x = (icirc - N/2 )*dx
+y = (jcirc - M/2 )*dy
 
 # ishift = -x0 
 # jshift = -y0 
@@ -383,8 +392,8 @@ moment = 0
 
 ### Calculate xi_crit
 racf_std = np.std(racf)
-xi_crit = 1*racf_std    ## ## start with 1 standard deviation for reconstructions. May need to be fine tuned once we have a larger sample of reconstructions 
-
+#xi_crit = 1*racf_std    ## ## start with 1 standard deviation for reconstructions. May need to be fine tuned once we have a larger sample of reconstructions 
+xi_crit = 0.6*racf_std
 
 ### Make sure no noise external to the central peak is included in the calculation. filter external noise using 'labels'
 from scipy.ndimage import label

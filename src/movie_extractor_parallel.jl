@@ -1,11 +1,11 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 24 Jan 2024
+# Author: Rohan Dahale, Date: 14 May 2024
 # Based on image_extractor.jl taken from VIDA.jl github scripts
 ######################################################################
 
 """
-Julia Version 1.10.2
-Commit bd47eca2c8a (2024-03-01 10:14 UTC)
+Julia Version 1.10.3
+Commit 0b4590a5507 (2024-04-30 10:59 UTC)
 Build Info:
   Official https://julialang.org/ release
 Platform Info:
@@ -16,21 +16,20 @@ Platform Info:
   LLVM: libLLVM-15.0.7 (ORCJIT, znver3)
 Threads: 1 default, 0 interactive, 1 GC (on 112 virtual cores)
 
-  [c7e460c6] ArgParse v1.1.5
-  [336ed68f] CSV v0.10.13
-  [99d987ce] Comrade v0.9.3
+  [c7e460c6] ArgParse v1.2.0
+  [336ed68f] CSV v0.10.14
+  [99d987ce] Comrade v0.9.4
   [a93c6f00] DataFrames v1.6.1
   [c27321d9] Glob v1.3.1
   [3e6eede4] OptimizationBBO v0.2.1
   [bd407f91] OptimizationCMAEvolutionStrategy v0.2.1
   [3aafef2f] OptimizationMetaheuristics v0.2.0
-  [4096cdfb] VIDA v0.11.4
+  [4096cdfb] VIDA v0.11.7
   [9a3f8284] Random
 """
 
 using Pkg
 Pkg.activate(@__DIR__)
-Pkg.instantiate()
 using Distributed
 @everywhere begin
     using Pkg; Pkg.activate(@__DIR__)
@@ -43,8 +42,10 @@ using CSV
 using DataFrames
 using Random
 using Glob
+using Comrade
 
 @everywhere begin
+    using Comrade
     using OptimizationBBO
     using OptimizationMetaheuristics
     using OptimizationCMAEvolutionStrategy
@@ -55,12 +56,12 @@ function parse_commandline()
     s = ArgParseSettings()
 
     @add_arg_table! s begin
-        "--inputdir"
-            help = "input directory with hdf5 movies file to read"
+        "--input"
+            help = "input hdf5 movie file to read"
             arg_type = String
             required = true
-        "--outputdir"
-            help = "output direcorty to save csv file with extractions"
+        "--output"
+            help = "output csv file with extractions"
             arg_type = String
             required = true
         "--stride"
@@ -90,10 +91,6 @@ function parse_commandline()
             help = "Random seed for initial positions in extract"
             arg_type = Int
             default = 42
-        "--scat"
-            help = "dsct (descattered), sct (scattered) or none label for scattering"
-            arg_type = String
-            required = true
     end
     return parse_args(s)
 end
@@ -102,44 +99,33 @@ function main()
     #Parse the command line arguments
     parsed_args = parse_commandline()
     #Assign the arguments to specific variables
-    dir = parsed_args["inputdir"]
-    outdir = parsed_args["outputdir"]
+    file = parsed_args["input"]
+    output = parsed_args["output"]
     seed = parsed_args["seed"]
     stride = parsed_args["stride"]
     blur = parsed_args["blur"]
     templates = parsed_args["template"]
     @info "Template types $templates"
     restart = parsed_args["restart"]
-    scat = parsed_args["scat"]
+    
+    out_name = output
+    if !isfile(out_name)
+        println("Using options: ")
+        println("output name: $out_name, ")
+        println("random seed $seed")
+        println("Checkpoint stride $stride")
+        println("Blurring Gaussian kernel width in µas: $blur")
+        println("Starting fit")
 
-    if scat=="dsct"
-        files = glob("*_dsct.hdf5", dir)
-    elseif scat=="sct"
-        files = glob("*_sct.hdf5", dir)
+        main_sub(file, out_name,
+                 templates,
+                 seed,
+                 restart, stride, blur)
+        println("Done! Check $out_name for summary")
     else
-        files = glob("*.hdf5", dir)
+        println("$out_name already exists!")
     end
     
-    for file in files
-        out_name = outdir*chop(basename(file),tail=5)*"_vida.csv"
-
-        if !isfile(out_name)
-            println("Using options: ")
-            println("output name: $out_name, ")
-            println("random seed $seed")
-            println("Checkpoint stride $stride")
-            println("Blurring Gaussian kernel width in µas: $blur")
-            println("Starting fit")
-    
-            main_sub(file, out_name,
-                     templates,
-                     seed,
-                     restart, stride, blur)
-            println("Done! Check $out_name for summary")
-        else
-            println("$out_name already exists!")
-        end
-    end
     
     return 0
 end
@@ -185,6 +171,9 @@ function make_initial_template(template)
         stretch = occursin("stretch", template)
         @info "Template includes $ndisk disks with stretch $stretch"
         return make_initial_template_disk(ndisk, stretch)
+    elseif occursin("hotspot",template)
+        @info "Template includes mring_0_1 (-135 deg) with 1 gaussian"
+        return make_initial_template_mring_gauss()
     else
         @error "Template $template not available"
     end
@@ -318,6 +307,49 @@ function make_initial_template_mring(N::Int, M::Int, stretch)
     return mring, lower, upper
 end
 
+function make_initial_template_mring_gauss()
+    lower = (
+             r0 = μas2rad(24.0),
+             σ0 = μas2rad(8.0),
+             σ  = ntuple(_->μas2rad(0.0), 0),
+             ξσ = ntuple(_->-1π, 0),
+             s  = ntuple(_->0.24,1),
+             ξs = ntuple(_->deg2rad(-136),1),
+             x0 = -μas2rad(1.0),
+             y0 = -μas2rad(1.0),
+             f=2.0,
+             fg=0.1,
+             σg = μas2rad(10.0),
+             xg=-μas2rad(20.0),
+             yg=-μas2rad(20.0),
+             f0=1e-6
+             )
+
+    upper = (
+             r0 = μas2rad(28.0),
+             σ0 = μas2rad(10.0),
+             σ  = ntuple(_->μas2rad(0.0), 0),
+             ξσ = ntuple(_->1π, 0),
+             s  = ntuple(_->0.26,1),
+             ξs = ntuple(_->-deg2rad(-134),1),
+             x0 = μas2rad(1.0),
+             y0 = μas2rad(1.0),
+             f=3.0,
+             fg=0.5,
+             σg = μas2rad(12.0),
+             xg=μas2rad(20.0),
+             yg=μas2rad(20.0),
+             f0=0.1
+             )
+
+    mringgauss = @inline function (θ)
+        return modify(CosineRing(θ.σ0/θ.r0, θ.σ./θ.r0, θ.ξσ, θ.s, θ.ξs), Stretch(θ.r0), Shift(θ.x0, θ.y0), Renormalize(θ.f)) 
+                + modify(Gaussian(), Stretch(θ.σg), Shift(θ.xg, θ.yg), Renormalize(θ.fg)) + θ.f0*Constant(μas2rad(200.0))
+    end
+
+    return mringgauss, lower, upper
+end
+
 flattenvals(x::NamedTuple) = flattenvals(values(x)...)
 flattenvals(x, y...) = (flattenvals(x)..., flattenvals(y...)...)
 flattenvals(x::Tuple) = flattenvals(x...)
@@ -363,20 +395,21 @@ end
     println("Extracting frame at $time UT")
     image = frame
     if blur > 0.0
-        image = VIDA.blur(image, blur) # INI: blur the image with Gaussian kernel of given fwhm
+        image = Comrade.smooth(image, μas2rad(blur)/(2*sqrt(2*log(2)))) # INI: blur the image with Gaussian kernel of given fwhm
     end
     rimage = VIDA.regrid(image, μas2rad(200.0), μas2rad(200.0), 64, 64)
     cimage = VIDA.clipimage(0.0,rimage)
-    div = VIDA.LeastSquares(cimage)
+    div = VIDA.NxCorr(cimage)
     t = @elapsed begin
         prob = VIDAProblem(div, template, lower, upper)
         xopt,  θ, divmin = vida(prob, BBO_adaptive_de_rand_1_bin(); maxiters=100_000)
-        xopt2, θ, divmin = vida(prob, CMAEvolutionStrategyOpt(); init_params=xopt, maxiters=100_000)
+        #xopt2, θ, divmin = vida(prob, CMAEvolutionStrategyOpt(); init_params=xopt, maxiters=100_000)
         #xopt2, θ, divmin = vida(prob, ECA(); init_params=xopt, use_initial=true, maxiters=10_000)
+        xopt2, θ, divmin = vida(prob, ECA(;options=Options(f_calls_limit = 10_000, f_tol = 1e-5)); init_params=xopt, use_initial=true)
     end
     println("This took $t seconds")
     println("The minimum divergence is $divmin")
-    return xopt2, θ, divmin, time
+    return xopt2, θ, divmin
 end
 
 

@@ -6,6 +6,8 @@
 import numpy as np
 import pandas as pd
 import ehtim as eh
+import ehtim.scattering.stochastic_optics as so
+from preimcal import *
 from ehtim.const_def import *
 import tqdm
 from scipy import interpolate, optimize, stats
@@ -29,13 +31,12 @@ def create_parser():
     p.add_argument('-d', '--data', type=str,
                    default='hops_3601_SGRA_LO_netcal_LMTcal_10s_ALMArot_dcal.uvfits',
                    help='string of uvfits to data to compute chi2')
-    p.add_argument('--truthmv', type=str, default='', help='path of truth .hdf5')
-    p.add_argument('--kinemv',  type=str, default='', help='path of kine .hdf5')
-    p.add_argument('--starmv',  type=str, default='', help='path of starwarps .hdf5')
-    p.add_argument('--ehtmv',   type=str, default='', help='path of ehtim .hdf5')
-    p.add_argument('--dogmv',   type=str, default='', help='path of doghit .hdf5')
-    p.add_argument('--ngmv',    type=str, default='', help='path of ngmem .hdf5')
-    p.add_argument('--resmv',   type=str, default='', help='path of resolve .hdf5')
+    p.add_argument('--truthmv', type=str, default='none', help='path of truth .hdf5')
+    p.add_argument('--kinemv',  type=str, default='none', help='path of kine .hdf5')
+    p.add_argument('--ehtmv',   type=str, default='none', help='path of ehtim .hdf5')
+    p.add_argument('--dogmv',   type=str, default='none', help='path of doghit .hdf5')
+    p.add_argument('--ngmv',    type=str, default='none', help='path of ngmem .hdf5')
+    p.add_argument('--resmv',   type=str, default='none', help='path of resolve .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./chi2.png',
                    help='name of output file with path')
 
@@ -389,7 +390,7 @@ mpl.rcParams['figure.dpi']=300
 #mpl.rcParams["mathtext.default"] = 'regular'
 plt.rcParams["xtick.direction"]="in"
 plt.rcParams["ytick.direction"]="in"
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
 mpl.rcParams["ytick.labelsize"] = 18
@@ -407,7 +408,9 @@ mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
 ######################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
+obs.add_scans()
 obs = obs.avg_coherent(60.0)
+obs = obs.add_fractional_noise(0.01)
 
 obs.add_scans()
 times = []
@@ -417,30 +420,21 @@ obslist = obs.split_obs()
 ######################################################################
 
 pathmovt = args.truthmv
-pathmov  = args.kinemv
-pathmov2 = args.starmv
-pathmov3 = args.ehtmv
-pathmov4 = args.dogmv
-pathmov5 = args.ngmv
-pathmov6 = args.resmv
-
 outpath = args.outpath
 
 paths={}
-if args.truthmv!='':
+if args.truthmv!='none':
     paths['truth']=args.truthmv
-if args.kinemv!='':
+if args.kinemv!='none':
     paths['kine']=args.kinemv
-if args.starmv!='':
-    paths['starwarps']=args.starmv
-if args.ehtmv!='':
-    paths['ehtim']=args.ehtmv
-if args.dogmv!='':
-    paths['doghit']=args.dogmv
-if args.ngmv!='':
-    paths['ngmem']=args.ngmv
-if args.resmv!='':
+if args.resmv!='none':
     paths['resolve']=args.resmv
+if args.ehtmv!='none':
+    paths['ehtim']=args.ehtmv
+if args.dogmv!='none':
+    paths['doghit']=args.dogmv
+if args.ngmv!='none':
+    paths['ngmem']=args.ngmv
 ######################################################################
 
 # Truncating the times and obslist based on submitted movies
@@ -465,25 +459,40 @@ for t in y:
 ######################################################################
 
 colors = {
-            'truth'    : 'white',
-            'kine'     : 'darkorange',
-            'starwarps': 'xkcd:azure',
+            'truth'    : 'black',
+            'kine'     : 'xkcd:azure',
             'ehtim'    : 'forestgreen',
             'doghit'   : 'darkviolet',
             'ngmem'    : 'crimson',
-            'resolve'  : 'hotpink'
+            'resolve'  : 'tab:orange'
         }
 
 labels = {
             'truth'    : 'Truth',
             'kine'     : 'kine',
-            'starwarps': 'StarWarps',
             'ehtim'    : 'ehtim',
             'doghit'   : 'DoG-HiT',
             'ngmem'    : 'ngMEM',
             'resolve'  : 'resolve'
         }
 
+mfcs = {
+            'truth'    : 'none',
+            'kine'     : 'xkcd:azure',
+            'resolve'  : 'tab:orange',
+            'ehtim'    : 'forestgreen',
+            'doghit'   : 'darkviolet',
+            'ngmem'    : 'crimson'
+        }
+
+mss = {
+            'truth'    : 10,
+            'kine'     : 5,
+            'resolve'  : 5,
+            'ehtim'    : 5,
+            'doghit'   : 5,
+            'ngmem'    : 5 
+        }
 fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(32,8), sharex=True)
 
 ax[0,0].set_ylabel('Diameter $({\mu as})$')
@@ -503,20 +512,18 @@ polpaths={}
 for p in paths.keys():
     mv=eh.movie.load_hdf5(paths[p])
     im=mv.im_list()[0]
-    if p!='starwarps' and p!='ehtim':
-        if len(im.ivec)>0 and len(im.qvec)>0 and len(im.uvec)>0 :
-            polpaths[p]=paths[p]
+    if len(im.ivec)>0 and len(im.qvec)>0 and len(im.uvec)>0 :
+        polpaths[p]=paths[p]
 
 polvpaths={}
 for p in paths.keys():
     mv=eh.movie.load_hdf5(paths[p])
     im=mv.im_list()[0]
-    if p!='starwarps' and p!='ehtim':
-        if len(im.ivec)>0 and len(im.vvec)>0:
-            polvpaths[p]=paths[p]
+    if len(im.ivec)>0 and len(im.vvec)>0:
+        polvpaths[p]=paths[p]
 
-for p in polpaths.keys():
-    mv=eh.movie.load_hdf5(polpaths[p])
+for p in paths.keys():
+    mv=eh.movie.load_hdf5(paths[p])
 
     imlist = [mv.get_image(t) for t in times]
 
@@ -528,22 +535,24 @@ for p in polpaths.keys():
     #table_vals[p]=np.round(np.mean(np.array(mnet_tab)),3)
 
     mc=colors[p]
-    alpha = 0.5
+    alpha = 1.0
     lc=colors[p]
+    mfc=mfcs[p]
+    ms=mss[p]
     # Diameter
-    ax[0,0].plot(times, table["D"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
+    ax[0,0].plot(times, table["D"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
     # FWHM
-    ax[0,1].plot(times, table["W"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+    ax[0,1].plot(times, table["W"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
     # Position angle
-    ax[0,2].plot(times, table["PAori"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+    ax[0,2].plot(times, table["PAori"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
     # Frac Central Brightness
-    ax[1,0].plot(times, table["fc"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+    ax[1,0].plot(times, table["fc"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
     # Asymetry
-    ax[1,1].plot(times, table["A"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+    ax[1,1].plot(times, table["A"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
     # peak position angle
-    ax[1,2].plot(times, table["papeak"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+    ax[1,2].plot(times, table["papeak"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
 
-ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3., 1.3), markerscale=2.5)
+ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3., 1.3), markerscale=2.0)
 plt.savefig(args.outpath+'.png', bbox_inches='tight', dpi=300)
 
 
@@ -588,21 +597,23 @@ for p in polpaths.keys():
         table = pd.DataFrame(pol_outputs, columns=["time_utc","mnet","mavg","evpa","beta2_abs","beta2_angle","vnet","beta_v_abs", "beta_v_angle","beta2_v_abs", "beta2_v_angle"])
 
         mc=colors[p]
-        alpha = 0.5
+        alpha = 1.0
         lc=colors[p]
+        mfc=mfcs[p]
+        ms=mss[p]
         # Diameter
-        ax[0,0].plot(times, table["mnet"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
+        ax[0,0].plot(times, table["mnet"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
         # FWHM
-        ax[0,1].plot(times, table["mavg"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        ax[0,1].plot(times, table["mavg"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
         # Position angle
-        ax[0,2].plot(times, table["evpa"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        ax[0,2].plot(times, table["evpa"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
         # Frac Central Brightness
-        ax[1,0].plot(times, table["beta2_abs"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        ax[1,0].plot(times, table["beta2_abs"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
         # Asymetry
-        ax[1,1].plot(times, table["beta2_angle"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        ax[1,1].plot(times, table["beta2_angle"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
         # peak position angle
-        ax[1,2].plot(times, table["vnet"],  marker ='o', mfc=mc, mec=mc, ms=5, ls='-', lw=1,  color=lc, alpha=alpha)
+        ax[1,2].plot(times, table["vnet"],  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
 
 if pol_count>0:
-    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3., 1.3), markerscale=2.5)
+    ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(3., 1.3), markerscale=2.0)
     plt.savefig(args.outpath+'_pol.png', bbox_inches='tight', dpi=300)

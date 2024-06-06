@@ -1,3 +1,7 @@
+######################################################################
+# Author: Rohan Dahale, Date: 14 May 2024
+######################################################################
+
 import ehtim as eh
 import ehtplot
 import numpy as np
@@ -15,14 +19,14 @@ def create_parser():
     p.add_argument('-d', '--data', type=str, 
                    default='hops_3601_SGRA_LO_netcal_LMTcal_10s_ALMArot_dcal.uvfits', 
                    help='string of uvfits to data to compute chi2')
-    p.add_argument('--truthmv', type=str, default='', help='path of truth .hdf5')
-    p.add_argument('--kinemv', type=str, default='', help='path of kine .hdf5')
-    p.add_argument('--starmv', type=str, default='', help='path of starwarps .hdf5')
-    p.add_argument('--ehtmv',  type=str, default='', help='path of ehtim .hdf5')
-    p.add_argument('--dogmv',  type=str, default='', help='path of doghit .hdf5')
-    p.add_argument('--ngmv',   type=str, default='', help='path of ngmem .hdf5')
-    p.add_argument('--resmv',  type=str, default='',help='path of resolve .hdf5')
-    p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
+    p.add_argument('--truthmv', type=str, default='none', help='path of truth .hdf5')
+    p.add_argument('--kinemv', type=str, default='none', help='path of kine .hdf5')
+    p.add_argument('--starmv', type=str, default='none', help='path of starwarps .hdf5')
+    p.add_argument('--ehtmv',  type=str, default='none', help='path of ehtim .hdf5')
+    p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
+    p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
+    p.add_argument('--resmv',  type=str, default='none',help='path of resolve .hdf5')
+    p.add_argument('-o', '--outpath', type=str, default='./gif.gif', 
                    help='name of output file with path')
     p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
 
@@ -39,7 +43,7 @@ import matplotlib as mpl
 #mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
 mpl.rcParams['figure.dpi']=300
 #mpl.rcParams["mathtext.default"] = 'regular'
-plt.style.use('dark_background')
+#plt.style.use('dark_background')
 mpl.rcParams["axes.labelsize"] = 20
 mpl.rcParams["xtick.labelsize"] = 18
 mpl.rcParams["ytick.labelsize"] = 18
@@ -57,6 +61,7 @@ mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
 
 # Time average data to 60s
 obs = eh.obsdata.load_uvfits(args.data)
+obs.add_scans()
 obs = obs.avg_coherent(60.0)
 
 # From GYZ: If data used by pipelines is descattered (refractive + diffractive),
@@ -74,31 +79,24 @@ for t in obs.scans:
 obslist = obs.split_obs()
 ######################################################################
 
-pathmov  = args.kinemv
-pathmov2 = args.starmv
-pathmov3 = args.ehtmv
-pathmov4 = args.dogmv
-pathmov5 = args.ngmv
-pathmov6 = args.resmv
-
 outpath = args.outpath
 
 paths={}
 
-if args.truthmv!='':
+if args.truthmv!='none':
     paths['truth']=args.truthmv
-if args.kinemv!='':
+if args.kinemv!='none':
     paths['kine']=args.kinemv
-if args.starmv!='':
-    paths['starwarps']=args.starmv
-if args.ehtmv!='':
-    paths['ehtim']=args.ehtmv
-if args.dogmv!='':
-    paths['doghit']=args.dogmv 
-if args.ngmv!='':
-    paths['ngmem']=args.ngmv
-if args.resmv!='':
+if args.resmv!='none':
     paths['resolve']=args.resmv
+if args.starmv!='none':
+    paths['starwarps']=args.starmv
+if args.ehtmv!='none':
+    paths['ehtim']=args.ehtmv
+if args.dogmv!='none':
+    paths['doghit']=args.dogmv 
+if args.ngmv!='none':
+    paths['ngmem']=args.ngmv
 
 
 # Truncating the times and obslist based on submitted movies
@@ -131,11 +129,11 @@ blur   = 0 * eh.RADPERUAS
 titles = {  
             'truth'      : 'Truth',
             'kine'       : 'kine',
+            'resolve'    : 'resolve',
             'starwarps'  : 'StarWarps',
             'ehtim'      : 'ehtim',
             'doghit'     : 'DoG-HiT',
-            'ngmem'      : 'ngMEM',
-            'resolve'    : 'resolve'
+            'ngmem'      : 'ngMEM'
         }
 
 
@@ -168,8 +166,8 @@ for p in paths.keys():
     imlistI = []
     for t in u_times:
         im = mov.get_image(t)
-        #if p=='truth':
-        #    im = im.blur_circ(fwhm_i=15*eh.RADPERUAS).regrid_image(fov, npix)
+        if p=='truth':
+            im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
         #else:
         im = im.blur_circ(fwhm_i=blur).regrid_image(fov, npix)
         im.ivec=im.ivec/im.total_flux()
