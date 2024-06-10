@@ -231,6 +231,14 @@ for d in datalist:
         outpath =f'{resultsdir}/{model}_nxcorr'
         if not os.path.exists(outpath+'.png'):
             os.system(f'python ./src/nxcorr.py --data {data} {paths} -o {outpath} --scat {scat}')
+            
+        outpath =f'{resultsdir}/{model}_nxcorr_static'
+        if not os.path.exists(outpath+'.png'):
+            os.system(f'python ./src/nxcorr_static.py --data {data} {paths} -o {outpath} --scat {scat}')
+            
+        outpath =f'{resultsdir}/{model}_nxcorr_dynamic'
+        if not os.path.exists(outpath+'.png'):
+            os.system(f'python ./src/nxcorr_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
     
     ##############################################################################################
     # MBREVE
