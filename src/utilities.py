@@ -115,7 +115,7 @@ def process_obs(obs,args,paths):
         obs = sm.Deblur_obs(obs)
 
     obs = obs.avg_coherent(60.0)
-    obs = obs.add_fractional_noise(0.01)
+    #obs = obs.add_fractional_noise(0.01)
     
     obs.add_scans()
     obslist = obs.split_obs()
@@ -288,7 +288,7 @@ def process_obs_weights(obs,args,paths):
         obs = sm.Deblur_obs(obs)
 
     obs = obs.avg_coherent(60.0)
-    obs = obs.add_fractional_noise(0.01)
+    #obs = obs.add_fractional_noise(0.01)
 
     obs.add_scans()
     obslist = obs.split_obs()
