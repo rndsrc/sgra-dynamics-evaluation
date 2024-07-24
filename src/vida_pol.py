@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 13 May 2024
+# Author: Rohan Dahale, Date: 12 July 2024
 ######################################################################
 
 # Import libraries
@@ -11,7 +11,6 @@ from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
-
 import argparse
 import os
 import glob
@@ -19,6 +18,8 @@ from tqdm import tqdm
 import itertools 
 import sys
 from copy import copy
+from utilities import *
+colors, titles, labels, mfcs, mss = common()
 
 ######################################################################
 # Parsing arguments function
@@ -42,153 +43,55 @@ def create_parser():
 # List of parsed arguments
 args = create_parser().parse_args()
 
-
-######################################################################
-# Plotting Setup
-######################################################################
-#plt.rc('text', usetex=True)
-import matplotlib as mpl
-#mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-mpl.rcParams['figure.dpi']=300
-#mpl.rcParams["mathtext.default"] = 'regular'
-plt.rcParams["xtick.direction"]="in"
-plt.rcParams["ytick.direction"]="in"
-#plt.style.use('dark_background')
-
-mpl.rcParams["axes.labelsize"] = 20
-mpl.rcParams["xtick.labelsize"] = 18
-mpl.rcParams["ytick.labelsize"] = 18
-mpl.rcParams["legend.fontsize"] = 18
-
-from matplotlib import font_manager
-font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
-#mpl.rc('text', usetex=True)
-
-fe = font_manager.FontEntry(
-    fname='./fonts/Helvetica.ttf',
-    name='Helvetica')
-font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
-mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
-######################################################################
 outpath = args.outpath
 cores = args.cores
+data = args.data
+scat= args.data
 
 paths={}
 if args.truthmv!='none':
     paths['truth']=args.truthmv
 if args.kinemv!='none':
     paths['kine']=args.kinemv
+if args.resmv!='none':
+    paths['resolve']=args.resmv
 if args.ehtmv!='none':
     paths['ehtim']=args.ehtmv
 if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
-if args.resmv!='none':
-    paths['resolve']=args.resmv
 
-colors = {  'truth'    : 'black', 
-            'kine'     : 'xkcd:azure',
-            'resolve'  : 'tab:orange',
-            'ehtim'    : 'forestgreen',
-            'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson'
-        }
-
-labels = {  'truth'    : 'Truth',
-            'kine'     : 'kine',
-            'resolve'  : 'resolve',
-            'ehtim'    : 'ehtim',
-            'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM'
-        }
-
-mfcs = {
-            'truth'    : 'none',
-            'kine'     : 'xkcd:azure',
-            'resolve'  : 'tab:orange',
-            'ehtim'    : 'forestgreen',
-            'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson'
-        }
-
-mss = {
-            'truth'    : 10,
-            'kine'     : 5,
-            'resolve'  : 5,
-            'ehtim'    : 5,
-            'doghit'   : 5,
-            'ngmem'    : 5 
-        }
-
-data = args.data
-scat= args.data
-
-# Time average data to 60s
-obs = eh.obsdata.load_uvfits(args.data)
-obs.add_scans()
-# From GYZ: If data used by pipelines is descattered (refractive + diffractive),
-# Add 2% error and deblur original data.
-if args.scat=='dsct':
-    # Refractive Scattering
-    #obs = obs.add_fractional_noise(0.02)
-    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
-    # Diffractive Scattering
-    sm = so.ScatteringModel()
-    obs = sm.Deblur_obs(obs)
-
-obs = obs.avg_coherent(60.0)
-obs = obs.add_fractional_noise(0.01)
-
-
-obs.add_scans()
-times = []
-for t in obs.scans:
-    times.append(t[0])
-obslist = obs.split_obs()
 ######################################################################
-# Truncating the times and obslist based on submitted movies
-obslist_tn=[]
-min_arr=[] 
-max_arr=[]
 
-for p in paths.keys(): 
-    mv=eh.movie.load_hdf5(paths[p])
-    min_arr.append(min(mv.times))
-    max_arr.append(max(mv.times))
+obs = eh.obsdata.load_uvfits(args.data)
+obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(obs, args, paths)
 
-x=np.argwhere(times>max(min_arr))
-ntimes=[]
-for t in x:
-    ntimes.append(times[t[0]])
-    obslist_tn.append(obslist[t[0]])
-times=[]
-obslist_t=[]
-y=np.argwhere(min(max_arr)>ntimes)
-for t in y:
-    times.append(ntimes[t[0]])
-    obslist_t.append(obslist_tn[t[0]])
 ######################################################################
 
 for p in paths.keys():
-    mv=eh.movie.load_hdf5(paths[p])
-    iml=[mv.get_image(t) for t in times]
-    file_path = args.outpath
-    parts = file_path.rsplit('/', 1)
-
-    if len(parts) == 2:
-        folder, filename = parts
-    os.system(f'mkdir -p {folder}/temp/')
-    i=0
-    for im in iml:
-        if p=='truth':
-            im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS)
-        im.save_fits(f"{folder}/temp/{times[i]}.fits")
-        i=i+1
-    os.system(f'realpath {folder}/temp/*.fits > {folder}/temp/filelist.txt')
     outpath_csv= outpath[:-4]+f'_{p}.csv'
-    os.system(f'julia -p {cores} ./src/VLBIImagingSummaryStats.jl/scripts/summarystats/main.jl {folder}/temp/filelist.txt {outpath_csv} -s {cores}')
-    os.system(f'rm -r {folder}/temp/')
+    if not os.path.exists(outpath_csv):
+        mv=eh.movie.load_hdf5(paths[p])
+        iml=[mv.get_image(t) for t in times]
+        file_path = args.outpath
+        parts = file_path.rsplit('/', 1)
+
+        if len(parts) == 2:
+            folder, filename = parts
+        os.system(f'mkdir -p {folder}/temp/')
+        i=0
+        for im in iml:
+            if p=='truth':
+                im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS)
+            im.save_fits(f"{folder}/temp/{times[i]}.fits")
+            i=i+1
+        
+        os.system(f'realpath {folder}/temp/*.fits > {folder}/temp/filelist.txt')
+        os.system(f'julia -p {cores} ./src/VLBIImagingSummaryStats.jl/scripts/summarystats/main.jl {folder}/temp/filelist.txt {outpath_csv} -s {cores}')
+        os.system(f'rm -r {folder}/temp/')
+
+######################################################################
 
 fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(15,6), sharex=True)
 fig.subplots_adjust(hspace=0.1, wspace=0.5, top=0.8, bottom=0.01, left=0.01, right=0.8)
@@ -213,10 +116,14 @@ ax[1,2].set_xlabel('Time (UTC)')
 ax[1,3].set_xlabel('Time (UTC)')
 
 s={}
+m_net_dict={}
+m_avg_dict={}
+ang_betalp_2_dict={}
+ang_betacp_1_dict={}
+
 for p in paths.keys():
     s[p]  = outpath[:-4]+f'_{p}.csv'
-######################################################################
-
+    
     df = pd.read_csv(s[p])
 
     times=[]
@@ -235,19 +142,7 @@ for p in paths.keys():
     mod_betacp_1 = np.abs(betacp_1)
     ang_betacp_1 = np.rad2deg(np.angle(betacp_1))
             
-    #for i in range(len(ang_betacp_1)):
-        #if ang_betacp_1[i]<0:
-        #    ang_betacp_1[i] =  ang_betacp_1[i] + 360
-        #if ang_betacp_1[i]>360:
-        #    ang_betacp_1[i] =  ang_betacp_1[i] - 360
     ang_betacp_1 = ang_betacp_1%360
-        
-                
-    #for i in range(len(ang_betalp_2)):
-    #    if ang_betalp_2[i]<0:
-    #        ang_betalp_2[i] =  ang_betalp_2[i] + 360
-    #    if ang_betalp_2[i]>360:
-    #        ang_betalp_2[i] =  ang_betalp_2[i] - 360
     ang_betalp_2 = ang_betalp_2%360
 
     mc=colors[p]
@@ -268,6 +163,54 @@ for p in paths.keys():
         ax[1,2].plot(times, mod_betacp_1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
         ax[1,3].plot(times, ang_betacp_1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
 
-       
+    m_net_dict[p] = m_net
+    m_avg_dict[p] = m_avg
+    ang_betalp_2_dict[p] = ang_betalp_2
+    ang_betacp_1_dict[p] = ang_betacp_1
+
+score={}
+for p in paths.keys():
+    if p!='truth':
+        score[p]=np.zeros(4)
+
+row_labels = ['$|m|_{net}$', '$ \\langle |m| \\rangle$', '$ \\angle \\beta_{LP,2}$', '$ \\angle \\beta_{CP,1}$']
+table_vals = pd.DataFrame(data=score, index=row_labels)
+ 
+for p in paths.keys():
+    if p!='truth':
+        if np.sum(m_net_dict[p])!=0:
+            signal1 = m_net_dict['truth']
+            signal2 = m_net_dict[p]
+            table_vals[p][row_labels[0]] = normalized_rmse(signal1, signal2, w_norm['I'])
+
+            signal1 = m_avg_dict['truth']
+            signal2 = m_avg_dict[p]
+            table_vals[p][row_labels[1]] = normalized_rmse(signal1, signal2, w_norm['I'])
+
+            signal1 = ang_betalp_2_dict['truth']
+            signal2 = ang_betalp_2_dict[p]
+            table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
+
+            signal1 = ang_betacp_1_dict['truth']
+            signal2 = ang_betacp_1_dict[p]
+            table_vals[p][row_labels[3]] = normalized_rmse(signal1, signal2, w_norm['I'])
+
+
+table_vals.replace(0.00, '-', inplace=True)
+
+table = ax[0,1].table(cellText=table_vals.values,
+                    rowLabels=table_vals.index,
+                    colLabels=table_vals.columns,
+                    cellLoc='center',
+                    loc='bottom',
+                    bbox=[-0.1, -2.2, 3.5, 0.7])
+table.auto_set_font_size(False)
+table.set_fontsize(18)
+for c in table.get_children():
+    c.set_edgecolor('none')
+    c.set_text_props(color='black')
+    c.set_facecolor('none')
+    c.set_edgecolor('black')
+    
 ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(5.25, 1.35), markerscale=2)
 plt.savefig(outpath, bbox_inches='tight', dpi=300)

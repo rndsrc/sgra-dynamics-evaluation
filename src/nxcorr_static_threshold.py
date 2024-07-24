@@ -11,6 +11,7 @@ from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
+import scipy
 import argparse
 import os
 import glob
@@ -37,7 +38,7 @@ def create_parser():
 
 # List of parsed arguments
 args = create_parser().parse_args()
-
+    
 pathmovt  = args.truthmv
 outpath = args.outpath
 
@@ -52,8 +53,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
-    
 ######################################################################
+
 
 obs = eh.obsdata.load_uvfits(args.data)
 obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(obs, args, paths)
@@ -62,10 +63,10 @@ obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(ob
 
 fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(28,8), sharex=True)
 
-ax[0].set_ylabel('nxcorr (I)')
-ax[1].set_ylabel('nxcorr (Q)')
-ax[2].set_ylabel('nxcorr (U)')
-ax[3].set_ylabel('nxcorr (V)')
+ax[0].set_ylabel('$\Delta$ nxcorr (I)')
+ax[1].set_ylabel('$\Delta$ nxcorr (Q)')
+ax[2].set_ylabel('$\Delta$ nxcorr (U)')
+ax[3].set_ylabel('$\Delta$ nxcorr (V)')
 
 ax[0].set_xlabel('Time (UTC)')
 ax[1].set_xlabel('Time (UTC)')
@@ -73,14 +74,20 @@ ax[2].set_xlabel('Time (UTC)')
 ax[3].set_xlabel('Time (UTC)')
 
 
-ax[0].set_ylim(0,7)
-ax[1].set_ylim(0,7)
-ax[2].set_ylim(0,7)
-ax[3].set_ylim(0,7)
+ax[0].set_ylim(-1.1,1.1)
+ax[1].set_ylim(-1.1,1.1)
+ax[2].set_ylim(-1.1,1.1)
+ax[3].set_ylim(-1.1,1.1)
+
+#ax[0].set_ylim(0,7)
+#ax[1].set_ylim(0,7)
+#ax[2].set_ylim(0,7)
+#ax[3].set_ylim(0,7)
 
 
 mvt=eh.movie.load_hdf5(pathmovt)
-if args.scat=='dsct':
+#if args.scat=='dsct':
+if args.scat!='sct':
     mvt=mvt.blur_circ(fwhm_x=15*eh.RADPERUAS, fwhm_x_pol=15*eh.RADPERUAS, fwhm_t=0)
 
 mv_nxcorr={}
@@ -126,39 +133,89 @@ for pol in pollist:
         mv=eh.movie.load_hdf5(polpaths[p])
         
         imlist = [mv.get_image(t) for t in times]
-        imlist_t =[mvt.get_image(t) for t in times]
+        imlistarr=[]
+        for im in imlist:
+            im.ivec=im.ivec/im.total_flux()
+            imlistarr.append(im.imarr(pol=pol))
+        median = np.median(imlistarr,axis=0)
+        for im in imlist:
+            if pol=='I':
+                im.ivec= median.flatten()
+            elif pol=='Q':
+                im.qvec= median.flatten()
+            elif pol=='U':
+                im.uvec= median.flatten()
+            elif pol=='V':
+                im.vvec= median.flatten()
+    
 
+        imlist_t =[mvt.get_image(t) for t in times]
+        imlistarr=[]
+        for im in imlist_t:
+            im.ivec=im.ivec/im.total_flux()
+            imlistarr.append(im.imarr(pol=pol))
+        median = np.median(imlistarr,axis=0)
+        for im in imlist_t:
+            if pol=='I':
+                im.ivec= median.flatten()
+            elif pol=='Q':
+                im.qvec= median.flatten()
+            elif pol=='U':
+                im.uvec= median.flatten()
+            elif pol=='V':
+                im.vvec= median.flatten()
+        
         nxcorr_t=[]
+        nxs_cri=[]
         nxcorr_tab=[]
 
         i=0
         for im in imlist:
             nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'])
-            nxcorr_t.append(nxcorr[0][0]+s)
+            nxcorr_t.append(nxcorr[0][0])
             nxcorr_tab.append(nxcorr[0][0])
+            
+            beamparams = obslist_t[i].fit_beam(weighting='uniform')
+            nxs_cri.append(get_nxcorr_cri_beam(imlist_t[i], beamparams, pol=pol))
+            
             i=i+1
         
-        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),3)
+        w_ratio = w_norm[pol]/np.max(w_norm[pol])
+        w_ncri  = w_ratio*np.array(nxs_cri)
+        w_ncri = np.ones(len(w_ncri))*np.mean(w_ncri)
+        
+        count=0
+        diff=np.array(nxcorr_t)-np.array(w_ncri)
+        for d in diff:
+            if d>0:
+                count=count+1
+        if count==0:
+            table_vals[p][pol]=1000
+        else:
+            table_vals[p][pol]=np.round(count/len(nxcorr_t)*100,2)
                     
         mc=colors[p]
         alpha = 0.5
         lc=colors[p]
-        
+
         if k==0:
-            ax[k].plot(times, nxcorr_t,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
+            ax[k].plot(times, nxcorr_t-w_ncri,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
         else:
-            ax[k].plot(times, nxcorr_t,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1,  color=lc, alpha=alpha)  
+            ax[k].plot(times, nxcorr_t-w_ncri,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1,  color=lc, alpha=alpha)
     
-        ax[k].hlines(s+1, xmin=10.5, xmax=14.5, color=colors[p], ls='--', lw=1.5, zorder=0)
+        #ax[k].hlines(s+1, xmin=10.5, xmax=14.5, color=colors[p], ls='--', lw=1.5, zorder=0)
+        ax[k].hlines(0, xmin=10.5, xmax=14.5, color='k', ls='--', lw=1.5, zorder=0)
         ax[k].yaxis.set_ticklabels([])
         s=s+1
     
     k=k+1
     
-table_vals.rename(index={'I':'nxcorr (I)'},inplace=True)
-table_vals.rename(index={'Q':'nxcorr (Q)'},inplace=True)
-table_vals.rename(index={'U':'nxcorr (U)'},inplace=True)
-table_vals.rename(index={'V':'nxcorr (V)'},inplace=True)
+table_vals.rename(index={'I':'Pass? (I)'},inplace=True)
+table_vals.rename(index={'Q':'Pass? (Q)'},inplace=True)
+table_vals.rename(index={'U':'Pass? (U)'},inplace=True)
+table_vals.rename(index={'V':'Pass? (V)'},inplace=True)
+table_vals.replace(1000, 'Fail', inplace=True)
+table_vals.replace(100.0, 'Pass', inplace=True)
 table_vals.replace(0.000, '-', inplace=True)
 
 table = ax[1].table(cellText=table_vals.values,

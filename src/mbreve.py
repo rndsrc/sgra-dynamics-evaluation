@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 9 May 2024
+# Author: Rohan Dahale, Date: 12 July 2024
 ######################################################################
 
 # Import libraries
@@ -19,6 +19,8 @@ from tqdm import tqdm
 import itertools 
 import sys
 from copy import copy
+from utilities import *
+colors, titles, labels, mfcs, mss = common()
 
 # Parsing arguments function
 def create_parser():
@@ -39,43 +41,29 @@ def create_parser():
 
 # List of parsed arguments
 args = create_parser().parse_args()
-######################################################################
-# Plotting Setup
-######################################################################
-#plt.rc('text', usetex=True)
-import matplotlib as mpl
-#mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-mpl.rcParams['figure.dpi']=300
-#mpl.rcParams["mathtext.default"] = 'regular'
-plt.rcParams["xtick.direction"]="in"
-plt.rcParams["ytick.direction"]="in"
-#plt.style.use('dark_background')
 
-mpl.rcParams["axes.labelsize"] = 20
-mpl.rcParams["xtick.labelsize"] = 18
-mpl.rcParams["ytick.labelsize"] = 18
-mpl.rcParams["legend.fontsize"] = 18
+outpath = args.outpath
 
-from matplotlib import font_manager
-font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
-#mpl.rc('text', usetex=True)
+paths={}
 
-fe = font_manager.FontEntry(
-    fname='./fonts/Helvetica.ttf',
-    name='Helvetica')
-font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
-mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
+if args.ngmv!='none':
+    paths['ngmem']=args.ngmv
+if args.dogmv!='none':
+    paths['doghit']=args.dogmv 
+if args.ehtmv!='none':
+    paths['ehtim']=args.ehtmv
+if args.resmv!='none':
+    paths['resolve']=args.resmv
+if args.kinemv!='none':
+    paths['kine']=args.kinemv
 ######################################################################
 
 # Time average data to 60s
 obs = eh.obsdata.load_uvfits(args.data, polrep='circ')
 obs.add_scans()
 
-# From GYZ: If data used by pipelines is descattered (refractive + diffractive),
-# Add 2% error and deblur original data.
 if args.scat=='dsct':
     # Refractive Scattering
-    #obs = obs.add_fractional_noise(0.02)
     obs = obs.switch_polrep(polrep_out ='stokes')
     obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
     # Diffractive Scattering
@@ -93,36 +81,7 @@ obs.add_scans()
 times = []
 for t in obs.scans:
     times.append(t[0])
-obslist = obs.split_obs()
-######################################################################
-outpath = args.outpath
-
-paths={}
-
-if args.ngmv!='none':
-    paths['ngmem']=args.ngmv
-if args.dogmv!='none':
-    paths['doghit']=args.dogmv 
-if args.ehtmv!='none':
-    paths['ehtim']=args.ehtmv
-if args.resmv!='none':
-    paths['resolve']=args.resmv
-if args.kinemv!='none':
-    paths['kine']=args.kinemv
-
-
-def select_baseline(tab, st1, st2):
-        stalist = list(itertools.permutations([st1, st2]))
-        idx = []
-        for stations in stalist:
-            ant1, ant2 = stations
-            subidx = np.where((tab["t1"].values == ant1) &
-                              (tab["t2"].values == ant2) )
-            idx +=  list(subidx[0])
-    
-        newtab = tab.take(idx).sort_values(by=["time"]).reset_index(drop=True)
-        return newtab
-    
+obslist = obs.split_obs()    
 
 ######################################################################
 # Truncating the times and obslist based on submitted movies
@@ -156,22 +115,6 @@ for p in paths.keys():
         print('There is no I,Q or U')
 ######################################################################
 
-colors = {   
-            'kine'     : 'xkcd:azure',
-            'ehtim'    : 'forestgreen',
-            'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson',
-            'resolve'  : 'tab:orange'
-        }
-
-labels = {  
-            'kine'     : 'kine',
-            'ehtim'    : 'ehtim',
-            'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM',
-            'resolve'  : 'resolve'
-        }
-
 mb_time, mb_window = dict(), dict()
 
 for p in polpaths.keys():
@@ -183,6 +126,9 @@ for p in polpaths.keys():
         im.rf = obslist_t[ii].rf
         if im.xdim%2 == 1:
             im = im.regrid_image(targetfov=im.fovx(), npix=im.xdim-1)
+            im.rf=obslist_t[ii].rf
+            im.ra=obslist_t[ii].ra
+            im.dec=obslist_t[ii].dec
         obs_mod = im.observe_same(obslist_t[ii], add_th_noise=False, ttype='fast')
         obs_mod = obs_mod.switch_polrep(polrep_out ='circ')
         amp_mod = pd.DataFrame(obs_mod.data)

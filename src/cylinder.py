@@ -19,32 +19,8 @@ import sys
 import scipy.ndimage as ndimage
 import numpy.fft as fft
 
-
-######################################################################
-# Plotting Setup
-######################################################################
-#plt.rc('text', usetex=True)
-import matplotlib as mpl
-#mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-mpl.rcParams['figure.dpi']=300
-#mpl.rcParams["mathtext.default"] = 'regular'
-#plt.style.use('dark_background')
-
-mpl.rcParams["axes.labelsize"] = 20
-mpl.rcParams["xtick.labelsize"] = 18
-mpl.rcParams["ytick.labelsize"] = 18
-mpl.rcParams["legend.fontsize"] = 18
-
-from matplotlib import font_manager
-font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
-##mpl.rc('text', usetex=True)
-
-fe = font_manager.FontEntry(
-    fname='./fonts/Helvetica.ttf',
-    name='Helvetica')
-font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
-mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
-######################################################################
+from utilities import *
+colors, titles, labels, mfcs, mss = common()
 
 ############################## Chapter 1: Defining Functions and Paramters ##############################
 ######## Chapter 1.1: Defining Functions
@@ -77,21 +53,6 @@ def mean_subtract(m):
         m[:,i] = (m[:,i] - m[:,i].mean())
     for i in range(nftot):
         m[i,:] = (m[i,:] - m[i,:].mean())
-
-
-# ### Parsing arguments function
-# def create_parser():
-#     p = argparse.ArgumentParser()
-#     p.add_argument('--model', type=str, default='', help='path of model .hdf5')
-#     p.add_argument('--ring', type=str, default='', help='path of mean-image ring parameter .csv')
-#     p.add_argument('--out', type=str, default='', help='path of output directory')
-
-#     return p
-# ### List of parsed arguments
-# args = create_parser().parse_args()
-# file_path = args.model
-# ring_file_path = args.ring
-# output_dir = args.out
 
 ############################## Chapter 2: Reading Files and calculating cylinder plots ##############################
 ######## Chapter 2.1: Defining File Paths and Image Parameters
@@ -206,40 +167,42 @@ y = (jcirc - M/2 )*dy
 # x = (jcirc )*dx
 # y = (icirc )*dy
 
-### Plot Mean Image
-fig = plt.figure(figsize = (5,5))
-ax = plt.subplot(111)
-ax.imshow(mean_im, cmap='afmhot', aspect = 'auto', interpolation='bilinear', origin='lower', extent=[-FOV_uas/2, FOV_uas/2, -FOV_uas/2, FOV_uas/2])
-# plt.title('Mean Image')
-plt.axis('scaled')
-plt.xlim(-FOV_uas/2, FOV_uas/2)
-plt.ylim(-FOV_uas/2, FOV_uas/2)
-plt.xlabel(r'$x\, [\mu{\rm as}]$')
-plt.ylabel(r'$y\, [\mu{\rm as}]$')
-plt.plot(x,y )
-#plt.colorbar()
-# print(plot_dir + model_path + 'Figure1_Mean_unsmoothed_ring.png')
-plt.savefig(output_dir + 'Figure0_Mean_unsmoothed_ring.png', bbox_inches = 'tight')
-# plt.show()
-plt.close(fig)
-# plt.clf()
+if not os.path.exists(output_dir + 'Figure0_Mean_unsmoothed_ring.png'):
+    ### Plot Mean Image
+    fig = plt.figure(figsize = (5,5))
+    ax = plt.subplot(111)
+    ax.imshow(mean_im, cmap='afmhot', aspect = 'auto', interpolation='bilinear', origin='lower', extent=[-FOV_uas/2, FOV_uas/2, -FOV_uas/2, FOV_uas/2])
+    # plt.title('Mean Image')
+    plt.axis('scaled')
+    plt.xlim(-FOV_uas/2, FOV_uas/2)
+    plt.ylim(-FOV_uas/2, FOV_uas/2)
+    plt.xlabel(r'$x\, [\mu{\rm as}]$')
+    plt.ylabel(r'$y\, [\mu{\rm as}]$')
+    plt.plot(x,y )
+    #plt.colorbar()
+    # print(plot_dir + model_path + 'Figure1_Mean_unsmoothed_ring.png')
+    plt.savefig(output_dir + 'Figure0_Mean_unsmoothed_ring.png', bbox_inches = 'tight')
+    # plt.show()
+    plt.close(fig)
+    # plt.clf()
 
-### Plot Mean smoothed Image
-fig = plt.figure(figsize = (5,5))
-ax = plt.subplot(111)
-ax.imshow(mean_sim, cmap='afmhot', aspect = 'auto', interpolation='bilinear', origin='lower', extent=[-FOV_uas/2, FOV_uas/2, -FOV_uas/2, FOV_uas/2])
-# plt.title('Mean Image')
-plt.axis('scaled')
-plt.xlim(-FOV_uas/2, FOV_uas/2)
-plt.ylim(-FOV_uas/2, FOV_uas/2)
-plt.xlabel(r'$x\, [\mu{\rm as}]$')
-plt.ylabel(r'$y\, [\mu{\rm as}]$')
-plt.plot(x,y )
-#plt.colorbar()
-plt.savefig(output_dir + 'Figure1_Mean_smoothed_ring.png', bbox_inches = 'tight')
-# plt.show()
-plt.close(fig)
-# plt.clf()
+if not os.path.exists(output_dir + 'Figure1_Mean_smoothed_ring.png'):
+    ### Plot Mean smoothed Image
+    fig = plt.figure(figsize = (5,5))
+    ax = plt.subplot(111)
+    ax.imshow(mean_sim, cmap='afmhot', aspect = 'auto', interpolation='bilinear', origin='lower', extent=[-FOV_uas/2, FOV_uas/2, -FOV_uas/2, FOV_uas/2])
+    # plt.title('Mean Image')
+    plt.axis('scaled')
+    plt.xlim(-FOV_uas/2, FOV_uas/2)
+    plt.ylim(-FOV_uas/2, FOV_uas/2)
+    plt.xlabel(r'$x\, [\mu{\rm as}]$')
+    plt.ylabel(r'$y\, [\mu{\rm as}]$')
+    plt.plot(x,y )
+    #plt.colorbar()
+    plt.savefig(output_dir + 'Figure1_Mean_smoothed_ring.png', bbox_inches = 'tight')
+    # plt.show()
+    plt.close(fig)
+    # plt.clf()
 
 # for i in range(nftot):
 #     ### Plot Mean Image
@@ -269,18 +232,20 @@ for k in range(nftot):
 # np.save(output_dir + 'raw_cylinder.npy', q)
 
 ### Plot resulting Unsmoothed Unnormalized cylinder plot
-fig = plt.figure(figsize = (5,5))
-ax = plt.subplot(111)
-im = ax.imshow(q.T, cmap='afmhot', extent=[0, nftot*dt, 0, 360], aspect='auto', origin='lower' )
-ax.set_ylim(0, 360)
-ax.set_xlim(0, nftot*dt)
-ax.set_title('Raw Cylinder Plot')
-ax.set_xlabel(r'$t [G M/c^3]$')
-ax.set_ylabel(r'$\mathrm{PA} [{\rm deg}]$')
-colorbar(im)
-plt.savefig(output_dir + 'Figure2_Cylinder_raw.png', bbox_inches = 'tight')
-# plt.show()
-plt.close(fig)
+
+if not os.path.exists(output_dir + 'Figure2_Cylinder_raw.png'):
+    fig = plt.figure(figsize = (5,5))
+    ax = plt.subplot(111)
+    im = ax.imshow(q.T, cmap='afmhot', extent=[0, nftot*dt, 0, 360], aspect='auto', origin='lower' )
+    ax.set_ylim(0, 360)
+    ax.set_xlim(0, nftot*dt)
+    ax.set_title('Raw Cylinder Plot')
+    ax.set_xlabel(r'$t [G M/c^3]$')
+    ax.set_ylabel(r'$\mathrm{PA} [{\rm deg}]$')
+    colorbar(im)
+    plt.savefig(output_dir + 'Figure2_Cylinder_raw.png', bbox_inches = 'tight')
+    # plt.show()
+    plt.close(fig)
 
 
 ### Create Smoothed Unnormalized Cylinder Plot
@@ -317,18 +282,19 @@ mean_subtract(qn)
 ### Save resulting Cylinder Plot
 # np.save(output_dir + 'normalized_cylinder.npy', qn)
 
-### Plot resulting Unsmoothed Normalized cylinder plot
-fig = plt.figure(figsize = (5,5))
-ax = plt.subplot(111)
-ax.imshow(qn.T, cmap='afmhot', extent=[0, nftot*dt, 0, 360], aspect='auto', origin='lower')
-ax.set_ylim(0, 360)
-ax.set_xlim(0, nftot*dt)
-ax.set_title('Normalized Cylinder Plot')
-ax.set_xlabel(r'$t [G M/c^3]$')
-ax.set_ylabel(r'$\mathrm{PA} [{\rm deg}]$')
-plt.savefig(output_dir + 'Figure4_Cylinder_Normalized.png', bbox_inches = 'tight')
-# plt.show()
-plt.close(fig)
+if not os.path.exists(output_dir + 'Figure4_Cylinder_Normalized.png'):
+    ### Plot resulting Unsmoothed Normalized cylinder plot
+    fig = plt.figure(figsize = (5,5))
+    ax = plt.subplot(111)
+    ax.imshow(qn.T, cmap='afmhot', extent=[0, nftot*dt, 0, 360], aspect='auto', origin='lower')
+    ax.set_ylim(0, 360)
+    ax.set_xlim(0, nftot*dt)
+    ax.set_title('Normalized Cylinder Plot')
+    ax.set_xlabel(r'$t [G M/c^3]$')
+    ax.set_ylabel(r'$\mathrm{PA} [{\rm deg}]$')
+    plt.savefig(output_dir + 'Figure4_Cylinder_Normalized.png', bbox_inches = 'tight')
+    # plt.show()
+    plt.close(fig)
 
 
 ### Create Smoothed Normalized Cylinder Plot
@@ -341,156 +307,154 @@ mean_subtract(qsn)
 
 # print('qsn.shape', qsn.shape )
 ### plot resulting Smoothed Normalized Cylinder Plot
-fig = plt.figure(figsize = (5,5))
-ax = plt.subplot(111)
-im = ax.imshow(qsn.T, cmap='afmhot', extent=[0, nftot*dt, 0, 360], aspect='auto', origin='lower')
-ax.set_ylim(0, 360)
-ax.set_xlim(0, nftot*dt)
-ax.set_title('Smoothed Normalized Cylinder Plot')
-ax.set_xlabel(r'$t [G M/c^3]$')
-ax.set_ylabel(r'$\mathrm{PA} [{\rm deg}]$')
-plt.savefig(output_dir + 'Figure5_Cylinder_Smoothed_Normalized.png', bbox_inches = 'tight')
-# plt.show()
-plt.close(fig)
+if not os.path.exists(output_dir + 'Figure5_Cylinder_Smoothed_Normalized.png'):
+    fig = plt.figure(figsize = (5,5))
+    ax = plt.subplot(111)
+    im = ax.imshow(qsn.T, cmap='afmhot', extent=[0, nftot*dt, 0, 360], aspect='auto', origin='lower')
+    ax.set_ylim(0, 360)
+    ax.set_xlim(0, nftot*dt)
+    ax.set_title('Smoothed Normalized Cylinder Plot')
+    ax.set_xlabel(r'$t [G M/c^3]$')
+    ax.set_ylabel(r'$\mathrm{PA} [{\rm deg}]$')
+    plt.savefig(output_dir + 'Figure5_Cylinder_Smoothed_Normalized.png', bbox_inches = 'tight')
+    # plt.show()
+    plt.close(fig)
+
+if not os.path.exists(output_dir + 'Figure6_Autocorrelation.png'):
+    ############################## Chapter 3: Producing Autocorrelation Function ##############################
+    ######## Chapter 3.1: Finding the Autocorrelation
+    print("Calculating Autocorrelations...")
+    ### find the Autocorrelation Function
+    # qk = fft.fft2(qn)              ##  USE UNSMOOTHED, since output is already smoothed to EHT resolution? 
+    qk = fft.fft2(qsn)           ## take fourier transform of smooothed normalized cylinder
+
+    Pk = np.absolute(qk)**2        ## take square of the magnitude of the FT
+    acf = np.real( fft.ifft2(Pk) ) ## reverse transform, take real component which drops ~0 imaginary component
+    acf = acf/acf[0,0]             ## #normalize
+
+    ### Shift so that the peak correlation is in the middle
+    shifti = int(acf.shape[0]/2.)
+    shiftj = int(acf.shape[1]/2.)
+    racf = np.roll(acf, (shifti, shiftj), axis=(0,1))
 
 
 
-############################## Chapter 3: Producing Autocorrelation Function ##############################
-######## Chapter 3.1: Finding the Autocorrelation
-print("Calculating Autocorrelations...")
-### find the Autocorrelation Function
-# qk = fft.fft2(qn)              ##  USE UNSMOOTHED, since output is already smoothed to EHT resolution? 
-qk = fft.fft2(qsn)           ## take fourier transform of smooothed normalized cylinder
-
-Pk = np.absolute(qk)**2        ## take square of the magnitude of the FT
-acf = np.real( fft.ifft2(Pk) ) ## reverse transform, take real component which drops ~0 imaginary component
-acf = acf/acf[0,0]             ## #normalize
-
-### Shift so that the peak correlation is in the middle
-shifti = int(acf.shape[0]/2.)
-shiftj = int(acf.shape[1]/2.)
-racf = np.roll(acf, (shifti, shiftj), axis=(0,1))
+    ######## Chapter 3.2: Normalizing the Autocorrelation
+    racf /= np.max(racf) ## Normalize the Autocorrelation, so that the peak is 1
+    racf_cut = np.copy(racf) ## define racf_cut, which we'll use for the Omega_p calculation
 
 
 
-######## Chapter 3.2: Normalizing the Autocorrelation
-racf /= np.max(racf) ## Normalize the Autocorrelation, so that the peak is 1
-racf_cut = np.copy(racf) ## define racf_cut, which we'll use for the Omega_p calculation
+    ######## Chapter 3.3: Calculate the 2nd Moments
+    ts = np.linspace(-len(racf)/2, len(racf)/2, len(racf), endpoint = False)
+    phis = np.linspace(-len(racf[0])/2, len(racf[0])/2, len(racf[0]), endpoint = False)
+    delta_t = ts[1] - ts[0]
+    delta_phi = phis[1] - phis[0]
+
+    moment_t = 0 ## initialize 1st and 2nd moments, then loop over range to calcualte them
+    moment_phi = 0
+    moment_t_phi = 0
+    moment = 0
+
+    ### Calculate xi_crit
+    racf_std = np.std(racf)
+    #xi_crit = 1*racf_std    ## ## start with 1 standard deviation for reconstructions. May need to be fine tuned once we have a larger sample of reconstructions 
+    xi_crit = 0.6*racf_std
+
+    ### Make sure no noise external to the central peak is included in the calculation. filter external noise using 'labels'
+    from scipy.ndimage import label
+    labels, num_features = label((racf > xi_crit).astype(int)) ## label every feature > cut
+    Q = labels == labels[racf.shape[0] // 2, racf.shape[1] // 2] ## create mask for central region
+    non_zero_columns = np.count_nonzero( np.sum(Q, axis=0) )
+
+    ## add ceiling, if cut is too high or if not enough data:
+    if (xi_crit > 1) or (non_zero_columns < 5):
+        non_zero_columns = 5
+
+        ## Find the central index
+        central_row_index = racf.shape[0] // 2
+        central_column_index = (racf.shape[1]) // 2 
+
+        ## Calculate the edge_value
+        xi_crit = np.max(racf[:, int(central_column_index + non_zero_columns // 2) ])
+
+        ## Create the boolean mask (Q) based on your requirements
+        threshold_mask = (racf >= xi_crit).astype(int) & \
+            (np.abs(np.arange(racf.shape[1]) - central_column_index) <= non_zero_columns // 2)
+
+        ### use scipy ndimage 'label' function to distinguish central region > cut from external region > cut
+        central_row_index = racf.shape[0] // 2
+        central_column_index = racf.shape[1] // 2
+        labels, num_features = label(threshold_mask) ## label every feature > cut
+        central_peak_label = labels[central_row_index, central_column_index] ## Find label of the central peak feature
+
+        Q = labels == central_peak_label ## create mask for central region
+
+    for i in range(len(ts)):
+        for j in range(len(phis)):
+
+            ### I would like to add code like the above, but instead of using 'racf[i,j] < xi_crit', I would like to use the 'Q' mask that I created above.
+            if Q[i,j] == False:
+                racf_cut[i,j] = 0.0        ## Produce a cropped RACF that's zeroed beneath the min correlation brightness
+                continue
+            moment += racf_cut[i,j]
+            moment_t += racf_cut[i,j] * ts[i] * ts[i]
+            moment_phi += racf_cut[i,j] * phis[j] * phis[j]
+            moment_t_phi += racf_cut[i,j] * ts[i] * phis[j]
+
+    non_zero_pixels = np.count_nonzero(racf_cut) ## save area of central peak (in pixel units)
+    if non_zero_pixels < 20:
+        print("Caution: calculating moments over fewer than 20 pixels! Consider setting a lower xi_crit threshold")
+
+    ### Correct 2nd moment for units and normalize with 1st moment
+    moment *= delta_t*delta_phi
+    moment_t *= delta_t*delta_phi/moment
+    moment_phi *= delta_t*delta_phi/moment
+    moment_t_phi *= delta_t*delta_phi/moment
+
+    ### Find the pattern speed from the moments
+    pattern_speed = moment_t_phi/moment_t ## Omega_p = M_t_phi / M_t_t
+    pattern_speed = pattern_speed*dtheta/dt ## adjust for units
 
 
 
-######## Chapter 3.3: Calculate the 2nd Moments
-ts = np.linspace(-len(racf)/2, len(racf)/2, len(racf), endpoint = False)
-phis = np.linspace(-len(racf[0])/2, len(racf[0])/2, len(racf[0]), endpoint = False)
-delta_t = ts[1] - ts[0]
-delta_phi = phis[1] - phis[0]
+    ######## Chapter 3.4: Plotting Slopes
+    extent = [-(0.5*nftot + 0.5)*dt,(0.5*nftot - 0.5)*dt,-(0.5*ntheta + 0.5)*dtheta,(0.5*ntheta - 0.5)*dtheta]
+    if (nftot % 2) != 0: ## for an odd numer of frames, we shift by half a pixel right so that central peak is at \Delta t = 0. 
+            extent = extent + np.array([+dt/2, +dt/2, 0,0]) 
 
-moment_t = 0 ## initialize 1st and 2nd moments, then loop over range to calcualte them
-moment_phi = 0
-moment_t_phi = 0
-moment = 0
+    fig = plt.figure(figsize = (7,7))
+    ax = plt.subplot(111)
+    im = ax.imshow(racf.T, cmap='afmhot', aspect = 'auto', origin = 'lower',
+    # im = ax.imshow(racf, cmap='afmhot', aspect = 'auto', origin = 'lower',
+        extent = extent,
+        interpolation='bilinear')
 
-### Calculate xi_crit
-racf_std = np.std(racf)
-#xi_crit = 1*racf_std    ## ## start with 1 standard deviation for reconstructions. May need to be fine tuned once we have a larger sample of reconstructions 
-xi_crit = 0.6*racf_std
+    plt.contour(Q.T,extent=extent,origin='lower',levels=[0.5], c='purple')
+    # plt.contour(Q,extent=extent,origin='lower',levels=[0.5], c='purple')
+    # plt.contour((racf > xi_crit).T, extent=extent,origin='lower',levels=[0.5], c='purple')
+    ax.set_xlabel(r'$\Delta t [G M/c^3]$')
+    ax.set_ylabel(r'$\Delta \mathrm{PA} [{\rm deg}]$')
+    ax.set_title('Autocorrelation', fontsize=22)
+    ax.set_ylim(-len(racf[0,:])*dtheta/2, len(racf[0,:])*dtheta/2.)
+    ax.set_xlim(-len(racf[:,0])*dt/2., len(racf[:,0])*dt/2.)
+    #Plot a line with slope equal to the pattern speed
+    x_vals = np.arange(0,5*nftot, 1)
+    y_vals = pattern_speed * x_vals
+    ax.plot(x_vals, y_vals, 'g--', lw=2, alpha=1.0, label='Measured Slope {0:0.2f} [deg / GMc^-3]'.format(pattern_speed))
+    colorbar(im)
+    ax.legend(loc='best',  bbox_to_anchor=(1.0, 1.2))
+    plt.savefig(output_dir + 'Figure6_Autocorrelation.png', bbox_inches = 'tight')
+    # plt.show()
+    plt.close(fig)
 
-### Make sure no noise external to the central peak is included in the calculation. filter external noise using 'labels'
-from scipy.ndimage import label
-labels, num_features = label((racf > xi_crit).astype(int)) ## label every feature > cut
-Q = labels == labels[racf.shape[0] // 2, racf.shape[1] // 2] ## create mask for central region
-non_zero_columns = np.count_nonzero( np.sum(Q, axis=0) )
+    ############################################################################################################
+    ############################## Chapter 4: Output ##############################
+    ######## Chapter 4.1: Print or Save Results
 
-## add ceiling, if cut is too high or if not enough data:
-if (xi_crit > 1) or (non_zero_columns < 5):
-    non_zero_columns = 5
+    table_row = [file_path, pattern_speed]
+    table_name = output_dir + 'cylinder_data.npy'
+    np.save(table_name, table_row)
 
-    ## Find the central index
-    central_row_index = racf.shape[0] // 2
-    central_column_index = (racf.shape[1]) // 2 
-
-    ## Calculate the edge_value
-    xi_crit = np.max(racf[:, int(central_column_index + non_zero_columns // 2) ])
-
-    ## Create the boolean mask (Q) based on your requirements
-    threshold_mask = (racf >= xi_crit).astype(int) & \
-        (np.abs(np.arange(racf.shape[1]) - central_column_index) <= non_zero_columns // 2)
-
-    ### use scipy ndimage 'label' function to distinguish central region > cut from external region > cut
-    central_row_index = racf.shape[0] // 2
-    central_column_index = racf.shape[1] // 2
-    labels, num_features = label(threshold_mask) ## label every feature > cut
-    central_peak_label = labels[central_row_index, central_column_index] ## Find label of the central peak feature
-
-    Q = labels == central_peak_label ## create mask for central region
-
-for i in range(len(ts)):
-    for j in range(len(phis)):
-
-        ### I would like to add code like the above, but instead of using 'racf[i,j] < xi_crit', I would like to use the 'Q' mask that I created above.
-        if Q[i,j] == False:
-            racf_cut[i,j] = 0.0        ## Produce a cropped RACF that's zeroed beneath the min correlation brightness
-            continue
-        moment += racf_cut[i,j]
-        moment_t += racf_cut[i,j] * ts[i] * ts[i]
-        moment_phi += racf_cut[i,j] * phis[j] * phis[j]
-        moment_t_phi += racf_cut[i,j] * ts[i] * phis[j]
-
-non_zero_pixels = np.count_nonzero(racf_cut) ## save area of central peak (in pixel units)
-if non_zero_pixels < 20:
-    print("Caution: calculating moments over fewer than 20 pixels! Consider setting a lower xi_crit threshold")
-
-### Correct 2nd moment for units and normalize with 1st moment
-moment *= delta_t*delta_phi
-moment_t *= delta_t*delta_phi/moment
-moment_phi *= delta_t*delta_phi/moment
-moment_t_phi *= delta_t*delta_phi/moment
-
-### Find the pattern speed from the moments
-pattern_speed = moment_t_phi/moment_t ## Omega_p = M_t_phi / M_t_t
-pattern_speed = pattern_speed*dtheta/dt ## adjust for units
-
-
-
-######## Chapter 3.4: Plotting Slopes
-extent = [-(0.5*nftot + 0.5)*dt,(0.5*nftot - 0.5)*dt,-(0.5*ntheta + 0.5)*dtheta,(0.5*ntheta - 0.5)*dtheta]
-if (nftot % 2) != 0: ## for an odd numer of frames, we shift by half a pixel right so that central peak is at \Delta t = 0. 
-        extent = extent + np.array([+dt/2, +dt/2, 0,0]) 
-
-fig = plt.figure(figsize = (7,7))
-ax = plt.subplot(111)
-im = ax.imshow(racf.T, cmap='afmhot', aspect = 'auto', origin = 'lower',
-# im = ax.imshow(racf, cmap='afmhot', aspect = 'auto', origin = 'lower',
-    extent = extent,
-    interpolation='bilinear')
-
-plt.contour(Q.T,extent=extent,origin='lower',levels=[0.5], c='purple')
-# plt.contour(Q,extent=extent,origin='lower',levels=[0.5], c='purple')
-# plt.contour((racf > xi_crit).T, extent=extent,origin='lower',levels=[0.5], c='purple')
-ax.set_xlabel(r'$\Delta t [G M/c^3]$')
-ax.set_ylabel(r'$\Delta \mathrm{PA} [{\rm deg}]$')
-ax.set_title('Autocorrelation', fontsize=22)
-ax.set_ylim(-len(racf[0,:])*dtheta/2, len(racf[0,:])*dtheta/2.)
-ax.set_xlim(-len(racf[:,0])*dt/2., len(racf[:,0])*dt/2.)
-#Plot a line with slope equal to the pattern speed
-x_vals = np.arange(0,5*nftot, 1)
-y_vals = pattern_speed * x_vals
-ax.plot(x_vals, y_vals, 'g--', lw=2, alpha=1.0, label='Measured Slope {0:0.2f} [deg / GMc^-3]'.format(pattern_speed))
-colorbar(im)
-ax.legend(loc='best',  bbox_to_anchor=(1.0, 1.2))
-plt.savefig(output_dir + 'Figure6_Autocorrelation.png', bbox_inches = 'tight')
-# plt.show()
-plt.close(fig)
-
-
-
-############################################################################################################
-############################## Chapter 4: Output ##############################
-######## Chapter 4.1: Print or Save Results
-
-table_row = [file_path, pattern_speed]
-table_name = output_dir + 'cylinder_data.npy'
-np.save(table_name, table_row)
-
-print("################### Result ###########################")
-print('model:', file_path, "// Pattern Speed:\n{0:0.2f} deg/GMc^-3".format(pattern_speed))
+    print("################### Result ###########################")
+    print('model:', file_path, "// Pattern Speed:\n{0:0.2f} deg/GMc^-3".format(pattern_speed))

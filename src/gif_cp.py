@@ -1,8 +1,10 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 14 May 2024
+# Author: Rohan Dahale, Date: 12 July 2024
 ######################################################################
 
 import ehtim as eh
+import ehtim.scattering.stochastic_optics as so
+from preimcal import *
 import ehtplot
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +14,8 @@ import pdb
 import argparse
 import os
 import glob
+from utilities import *
+colors, titles, labels, mfcs, mss = common()
 
 # Parsing arguments function
 def create_parser():
@@ -34,51 +38,6 @@ def create_parser():
 # List of parsed arguments
 args = create_parser().parse_args()
 
-######################################################################
-# Plotting Setup
-######################################################################
-#plt.rc('text', usetex=True)
-import matplotlib as mpl
-#mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-mpl.rcParams['figure.dpi']=300
-#mpl.rcParams["mathtext.default"] = 'regular'
-#plt.style.use('dark_background')
-mpl.rcParams["axes.labelsize"] = 20
-mpl.rcParams["xtick.labelsize"] = 18
-mpl.rcParams["ytick.labelsize"] = 18
-mpl.rcParams["legend.fontsize"] = 18
-
-from matplotlib import font_manager
-font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
-#mpl.rc('text', usetex=True)
-
-fe = font_manager.FontEntry(
-    fname='./fonts/Helvetica.ttf',
-    name='Helvetica')
-font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
-mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
-#####################################################################
-
-# Time average data to 60s
-obs = eh.obsdata.load_uvfits(args.data)
-obs.add_scans()
-obs = obs.avg_coherent(60.0)
-
-# From GYZ: If data used by pipelines is descattered (refractive + diffractive),
-# Add 2% error and deblur original data.
-if args.scat=='dsct':
-    obs = obs.add_fractional_noise(0.02)
-    import ehtim.scattering.stochastic_optics as so
-    sm = so.ScatteringModel()
-    obs = sm.Deblur_obs(obs)
-
-obs.add_scans()
-times = []
-for t in obs.scans:
-    times.append(t[0])
-obslist = obs.split_obs()
-######################################################################
-
 outpath = args.outpath
 
 paths={}
@@ -95,43 +54,16 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+######################################################################
 
-# Truncating the times and obslist based on submitted movies
-obslist_tn=[]
-min_arr=[] 
-max_arr=[]
-for p in paths.keys():
-    mv=eh.movie.load_hdf5(paths[p])
-    min_arr.append(min(mv.times))
-    max_arr.append(max(mv.times))
-x=np.argwhere(times>max(min_arr))
-ntimes=[]
-for t in x:
-    ntimes.append(times[t[0]])
-    obslist_tn.append(obslist[t[0]])
-times=[]
-obslist_t=[]
-y=np.argwhere(min(max_arr)>ntimes)
-for t in y:
-    times.append(ntimes[t[0]])
-    obslist_t.append(obslist_tn[t[0]])
-    
+obs = eh.obsdata.load_uvfits(args.data)
+obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
+
 ######################################################################
 # Set parameters
 npix   = 128
 fov    = 120 * eh.RADPERUAS
 blur   = 0 * eh.RADPERUAS
-######################################################################
-
-titles = {  
-            'truth'      : 'Truth',
-            'kine'       : 'kine',
-            'resolve'    : 'resolve',
-            'ehtim'      : 'ehtim',
-            'doghit'     : 'DoG-HiT',
-            'ngmem'      : 'ngMEM'
-        }
-
 
 ######################################################################
 # Adding times where there are gaps and assigning cmap as binary_us in the gaps
@@ -169,16 +101,16 @@ for p in paths.keys():
         im.ivec=im.ivec/im.total_flux()
         imlistI.append(im)
     imlistIs[p] =imlistI
-    #med = np.median(imlistIs[p],axis=0)
-    #for i in range(len(imlistIs[p])):
-        #imlistIs[p][i]= np.clip(imlistIs[p][i]-med,0,1)
         
 
-def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cmapsl, interp='gaussian', fps=20):
+def linear_interpolation(x, x1, y1, x2, y2):
+    return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
 
-    fig, ax = plt.subplots(nrows=1, ncols=len(paths.keys()), figsize=(15*len(paths.keys())/7+1,3))
-    #fig.tight_layout()
-    fig.subplots_adjust(hspace=0.1, wspace=0.1, top=0.7, bottom=0.1, left=0.005, right=0.9)
+def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cmapsl, interp='gaussian', fps=20):
+    num_subplots=len(paths.keys())
+    fig, ax = plt.subplots(nrows=1, ncols=len(paths.keys()), figsize=(linear_interpolation(num_subplots, 2, 8, 7, 16),linear_interpolation(num_subplots, 2, 4, 7, 3)))
+   #fig.tight_layout()
+    fig.subplots_adjust(hspace=linear_interpolation(num_subplots, 2, 0.01, 7, 0.1), wspace=linear_interpolation(num_subplots, 2, 0.05, 7, 0.1), top=linear_interpolation(num_subplots, 2, 0.8, 7, 0.7), bottom=linear_interpolation(num_subplots, 2, 0.01, 7, 0.1), left=linear_interpolation(num_subplots, 2, 0.01, 7, 0.005), right=linear_interpolation(num_subplots, 2, 0.8, 7, 0.9))
 
     # Set axis limits
     lims = None
@@ -187,8 +119,8 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
         lims = [fov//2, -fov//2, -fov//2, fov//2]
 
     # Set colorbar limits
-    TBfactor = 3.254e13/(movieIs['kine'][0].rf**2 * movieIs['kine'][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs['kine'][0].ivec)*TBfactor, min(movieIs['kine'][0].ivec)*TBfactor
+    TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
+    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
     
     polmovies={}
     for i, p in enumerate(movieIs.keys()):
@@ -231,7 +163,7 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
                 
             
         if f==0:
-            ax1 = fig.add_axes([0.92, 0.1, 0.01, 0.6] , anchor = 'E')     
+            ax1 = fig.add_axes([linear_interpolation(num_subplots, 2, 0.82, 7, 0.92), linear_interpolation(num_subplots, 2, 0.025, 7, 0.1), linear_interpolation(num_subplots, 2, 0.035, 7, 0.01), linear_interpolation(num_subplots, 2, 0.765, 7, 0.6)] , anchor = 'E') 
             fig.colorbar(ScalarMappable(norm=vcontour.norm, cmap=vcontour.cmap), cax=ax1, pad=0.12, fraction=0.046).set_label(label='$T_B$ ($10^9$ K)')
 
         

@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 14 May 2024
+# Author: Rohan Dahale, Date: 12 July 2024
 ######################################################################
 
 # Import libraries
@@ -11,10 +11,11 @@ from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
-
 import argparse
 import os
 import glob
+from utilities import *
+colors, titles, labels, mfcs, mss = common()
 
 # Parsing arguments function
 def create_parser():
@@ -33,62 +34,9 @@ def create_parser():
     p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
 
     return p
-
+######################################################################
 # List of parsed arguments
 args = create_parser().parse_args()
-######################################################################
-# Plotting Setup
-######################################################################
-#plt.rc('text', usetex=True)
-import matplotlib as mpl
-#mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-mpl.rcParams['figure.dpi']=300
-#mpl.rcParams["mathtext.default"] = 'regular'
-plt.rcParams["xtick.direction"]="in"
-plt.rcParams["ytick.direction"]="in"
-plt.rcParams["ytick.major.size"]=5
-plt.rcParams["ytick.minor.size"]=2.5
-#plt.style.use('dark_background')
-
-mpl.rcParams["axes.labelsize"] = 20
-mpl.rcParams["xtick.labelsize"] = 18
-mpl.rcParams["ytick.labelsize"] = 18
-mpl.rcParams["legend.fontsize"] = 18
-
-from matplotlib import font_manager
-font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
-#mpl.rc('text', usetex=True)
-
-fe = font_manager.FontEntry(
-    fname='./fonts/Helvetica.ttf',
-    name='Helvetica')
-font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
-mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
-######################################################################
-
-# Time average data to 60s
-obs = eh.obsdata.load_uvfits(args.data)
-obs.add_scans()
-# From GYZ: If data used by pipelines is descattered (refractive + diffractive),
-# Add 2% error and deblur original data.
-if args.scat=='dsct':
-    # Refractive Scattering
-    #obs = obs.add_fractional_noise(0.02)
-    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
-    # Diffractive Scattering
-    sm = so.ScatteringModel()
-    obs = sm.Deblur_obs(obs)
-
-obs = obs.avg_coherent(60.0)
-obs = obs.add_fractional_noise(0.01)
-
-obs.add_scans()
-times = []
-for t in obs.scans:
-    times.append(t[0])
-obslist = obs.split_obs()
-######################################################################
-
 outpath = args.outpath
 pol = args.pol
 
@@ -96,82 +44,21 @@ paths={}
 
 if args.kinemv!='none':
     paths['kine']=args.kinemv
+if args.resmv!='none':
+    paths['resolve']=args.resmv
 if args.ehtmv!='none':
     paths['ehtim']=args.ehtmv
 if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
-if args.resmv!='none':
-    paths['resolve']=args.resmv
 
+######################################################################
 
-# Truncating the times and obslist based on submitted movies
-obslist_tn=[]
-min_arr=[] 
-max_arr=[]
-for p in paths.keys():
-    mv=eh.movie.load_hdf5(paths[p])
-    min_arr.append(min(mv.times))
-    max_arr.append(max(mv.times))
-x=np.argwhere(times>max(min_arr))
-ntimes=[]
-for t in x:
-    ntimes.append(times[t[0]])
-    obslist_tn.append(obslist[t[0]])
-times=[]
-obslist_t=[]
-y=np.argwhere(min(max_arr)>ntimes)
-for t in y:
-    times.append(ntimes[t[0]])
-    obslist_t.append(obslist_tn[t[0]])
+obs = eh.obsdata.load_uvfits(args.data)
+obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
 
-
-    
-polpaths={}
-for p in paths.keys():
-    mv=eh.movie.load_hdf5(paths[p])
-    im=mv.get_image(times[0])
-    
-    if pol=='I':
-        if len(im.ivec)>0:
-            polpaths[p]=paths[p]
-        else:
-            print('Parse a vaild pol value')
-    elif pol=='Q':
-        if len(im.qvec)>0:
-            polpaths[p]=paths[p]
-        else:
-            print('Parse a vaild pol value')
-    elif pol=='U':
-        if len(im.uvec)>0:
-            polpaths[p]=paths[p]
-        else:
-            print('Parse a vaild pol value')
-    elif pol=='V':
-        if len(im.vvec)>0:
-            polpaths[p]=paths[p]
-        else:
-            print('Parse a vaild pol value')
-    else:
-        print('Parse a vaild pol value')
-
-
-colors = { 
-            'kine'     : 'xkcd:azure',
-            'resolve'  : 'tab:orange',
-            'ehtim'    : 'forestgreen',
-            'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson'
-        }
-
-labels = {
-            'kine'     : 'kine',
-            'resolve'  : 'resolve',
-            'ehtim'    : 'ehtim',
-            'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM'
-        }
+######################################################################
 
 fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(21,6), sharex=True)
 

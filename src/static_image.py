@@ -14,6 +14,7 @@ import pdb
 import argparse
 import os
 import glob
+
 from utilities import *
 colors, titles, labels, mfcs, mss = common()
 
@@ -57,10 +58,6 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
-######################################################################
-
-obs = eh.obsdata.load_uvfits(args.data)
-obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
 
 ######################################################################
 # Set parameters
@@ -69,64 +66,23 @@ fov    = 120 * eh.RADPERUAS
 blur   = 0 * eh.RADPERUAS
 ######################################################################
 
-titles = {  
-            'truth'      : 'Truth',
-            'kine'       : 'kine',
-            'resolve'    : 'resolve',
-            'starwarps'  : 'StarWarps',
-            'ehtim'      : 'ehtim',
-            'doghit'     : 'DoG-HiT',
-            'ngmem'      : 'ngMEM'
-        }
-
-
-######################################################################
-# Adding times where there are gaps and assigning cmap as binary_us in the gaps
-dt=[]
-for i in range(len(times)-1):
-    dt.append(times[i+1]-times[i])
-    
-mean_dt=np.mean(np.array(dt))
-
-u_times=[]
-cmapsl = []
-for i in range(len(times)-1):
-    if times[i+1]-times[i] > mean_dt:
-        j=0
-        while u_times[len(u_times)-1] < times[i+1]-mean_dt:
-            u_times.append(times[i]+j*mean_dt)
-            cmapsl.append('binary_usr')
-            j=j+1
-    else:
-        u_times.append(times[i])
-        cmapsl.append('afmhot_us')
-
-######################################################################
-
 imlistIs = {}
 for p in paths.keys():
-    mov = eh.movie.load_hdf5(paths[p])
-    imlistI = []
-    for t in u_times:
-        im = mov.get_image(t)
-        if p=='truth':
-            im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
-        #else:
-        im = im.blur_circ(fwhm_i=blur).regrid_image(fov, npix)
-        im.ivec=im.ivec/im.total_flux()
-        imlistI.append(im)
-    imlistIs[p] =imlistI
+    im = eh.image.load_fits(paths[p])
+    im.ivec = im.ivec/im.total_flux()
+    imlistIs[p] =im
+
 
 def linear_interpolation(x, x1, y1, x2, y2):
     return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
 
 
-def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cmapsl, interp='gaussian', fps=20):
+def static(Is, titles, paths, outpath='./', fov=None, interp='gaussian'):
     num_subplots=len(paths.keys())
     fig, ax = plt.subplots(nrows=1, ncols=len(paths.keys()), figsize=(linear_interpolation(num_subplots, 2, 8, 7, 16),linear_interpolation(num_subplots, 2, 4, 7, 3)))
-    #fig.tight_layout()
+   #fig.tight_layout()
     fig.subplots_adjust(hspace=linear_interpolation(num_subplots, 2, 0.01, 7, 0.1), wspace=linear_interpolation(num_subplots, 2, 0.05, 7, 0.1), top=linear_interpolation(num_subplots, 2, 0.8, 7, 0.7), bottom=linear_interpolation(num_subplots, 2, 0.01, 7, 0.1), left=linear_interpolation(num_subplots, 2, 0.01, 7, 0.005), right=linear_interpolation(num_subplots, 2, 0.8, 7, 0.9))
-    
+
     # Set axis limits
     lims = None
     if fov:
@@ -134,33 +90,24 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
         lims = [fov//2, -fov//2, -fov//2, fov//2]
 
     # Set colorbar limits
-    TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
+    TBfactor = 3.254e13/(Is[list(paths.keys())[0]].rf**2 * Is[list(paths.keys())[0]].psize**2)/1e9    
+    vmax, vmin = max(Is[list(paths.keys())[0]].ivec)*TBfactor, min(Is[list(paths.keys())[0]].ivec)*TBfactor
 
-    def plot_frame(f):
-        for i, p in enumerate(movieIs.keys()):
-            ax[i].clear() 
-            TBfactor = 3.254e13/(movieIs[p][f].rf**2 * movieIs[p][f].psize**2)/1e9
-            im =ax[i].imshow(np.array(movieIs[p][f].imarr(pol='I'))*TBfactor, cmap=cmaps[f], interpolation=interp, vmin=vmin, vmax=vmax, extent=lims)
-        
-            ax[i].set_title(titles[p], fontsize=18)
-            ax[i].set_xticks([]), ax[i].set_yticks([])
-            
-        if f==0:
-            ax1 = fig.add_axes([linear_interpolation(num_subplots, 2, 0.82, 7, 0.92), linear_interpolation(num_subplots, 2, 0.025, 7, 0.1), linear_interpolation(num_subplots, 2, 0.035, 7, 0.01), linear_interpolation(num_subplots, 2, 0.765, 7, 0.6)] , anchor = 'E') 
-            fig.colorbar(im, cax=ax1, ax=None, label = '$T_B$ ($10^9$ K)')
-        
-        plt.suptitle(f"{u_times[f]:.2f} UT", y=0.95, fontsize=22)
-
-        return fig
     
-    def update(f):
-        return plot_frame(f)
-
-    ani = animation.FuncAnimation(fig, update, frames=len(u_times), interval=1e3/fps)
-    wri = animation.writers['ffmpeg'](fps=fps, bitrate=1e6)
-
-    # Save gif
-    ani.save(f'{outpath}.gif', writer=wri, dpi=100)
-
-writegif(imlistIs, titles, paths, outpath=outpath, fov=fov, times=u_times, cmaps=cmapsl)
+    for i, p in enumerate(Is.keys()):
+        ax[i].clear() 
+        TBfactor = 3.254e13/(Is[p].rf**2 * Is[p].psize**2)/1e9
+        im =ax[i].imshow(np.array(Is[p].imarr(pol='I'))*TBfactor, cmap='afmhot_us', interpolation=interp, vmin=vmin, vmax=vmax, extent=lims)
+    
+        ax[i].set_title(titles[p], fontsize=18)
+        ax[i].set_xticks([]), ax[i].set_yticks([])
+        
+    
+    ax1 = fig.add_axes([linear_interpolation(num_subplots, 2, 0.82, 7, 0.92), linear_interpolation(num_subplots, 2, 0.025, 7, 0.1), linear_interpolation(num_subplots, 2, 0.035, 7, 0.01), linear_interpolation(num_subplots, 2, 0.765, 7, 0.6)] , anchor = 'E') 
+    fig.colorbar(im, cax=ax1, ax=None, label = '$T_B$ ($10^9$ K)')
+    
+    plt.suptitle("Median", y=0.95, fontsize=22)
+    # Save Plot
+    plt.savefig(f'{outpath}.png', bbox_inches='tight')
+    
+static(imlistIs, titles, paths, outpath=outpath, fov=fov)

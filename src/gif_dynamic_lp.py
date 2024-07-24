@@ -63,7 +63,7 @@ if args.ngmv!='none':
 
 obs = eh.obsdata.load_uvfits(args.data)
 obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
-
+    
 ######################################################################
 # Set parameters
 npix   = 128
@@ -97,16 +97,50 @@ imlistIs = {}
 for p in paths.keys():
     mov = eh.movie.load_hdf5(paths[p])
     imlistI = []
+    imlistarrI = []
+    imlistarrQ = []
+    imlistarrU = []
+    #imlistarrm = []
     for t in u_times:
         im = mov.get_image(t)
         if p=='truth':
             im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
         #else:
         im = im.blur_circ(fwhm_i=blur).regrid_image(fov, npix)
-        #im.ivec=im.ivec/im.total_flux()
         imlistI.append(im)
-    imlistIs[p] =imlistI
+        imlistarrI.append(im.imarr(pol='I'))
+        
+        #if len(im.qvec) and len(im.uvec) > 0 and p!='starwarps':
+        #    mfrac_arr = np.sqrt(im.imarr(pol='Q')**2 + im.imarr(pol='U')**2)/im.imarr(pol='I')
+        #    imlistarrm.append(mfrac_arr)
+        
+        if len(im.qvec) and len(im.uvec) > 0 and p!='starwarps':
+            imlistarrQ.append(im.imarr(pol='Q'))
+            imlistarrU.append(im.imarr(pol='U'))
+            
+    medianI = np.median(imlistarrI,axis=0)
+    if len(imlistarrQ) and len(imlistarrQ) > 0:
+        medianQ = np.median(imlistarrQ,axis=0)
+        medianU = np.median(imlistarrU,axis=0)
+    #if len(imlistarrm)>0:
+    #    medianm = np.median(imlistarrm,axis=0).flatten()
 
+    for im in imlistI:
+        #if len(im.qvec) and len(im.uvec) > 0 and p!='starwarps':
+        #    frac_arr = np.array(np.sqrt(im.imarr(pol='Q')**2 + im.imarr(pol='U')**2)/im.imarr(pol='I')).flatten()
+        im.ivec= np.array(im.imarr(pol='I')-medianI).flatten()
+        if len(im.qvec) and len(im.uvec) > 0 and p!='starwarps':
+            im.qvec= np.array(im.imarr(pol='Q')-medianQ).flatten()
+            im.uvec= np.array(im.imarr(pol='U')-medianU).flatten()
+        #if len(im.qvec) and len(im.uvec) > 0 and p!='starwarps':
+        #    q_arr= im.qvec - (im.qvec*medianm/frac_arr)
+        #    u_arr= im.uvec - (im.uvec*medianm/frac_arr)
+        #    
+        #    im.qvec= np.array(q_arr)
+        #    im.uvec= np.array(u_arr)
+            
+            
+    imlistIs[p] =imlistI
 
 def linear_interpolation(x, x1, y1, x2, y2):
     return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
@@ -125,7 +159,7 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
 
     # Set colorbar limits
     TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
+    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, 0 #min(movieIs['kine'][0].ivec)*TBfactor
     
     polmovies={}
     for i, p in enumerate(movieIs.keys()):    

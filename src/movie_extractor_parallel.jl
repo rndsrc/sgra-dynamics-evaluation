@@ -187,7 +187,8 @@ function make_initial_template_gauss(n::Int)
             modify(Gaussian(),
                 Stretch(θ.σ[i], θ.σ[i]),
                 #Rotate(θ.ξ[i]),
-                Shift(θ.x0[i], θ.y0[i])
+                Shift(θ.x0[i], θ.y0[i]),
+                Renormalize(θ.fg[i])
             )
         end
     end
@@ -196,12 +197,14 @@ function make_initial_template_gauss(n::Int)
              #ξ=ntuple(_->-π/2, n),
              x0=ntuple(_->-μas2rad(60.0), n),
              y0=ntuple(_->-μas2rad(60.0), n),
+             fg=ntuple(_->1e-5, n),
              )
     upper = (σ=ntuple(_-> μas2rad(100.0), n),
              #τ=ntuple(_->0.5, n),
              #ξ=ntuple(_->π/2, n),
              x0=ntuple(_->μas2rad(60.0), n),
              y0=ntuple(_->μas2rad(60.0), n),
+             fg=ntuple(_->200.0, n),
              )
 
     return gauss, lower, upper

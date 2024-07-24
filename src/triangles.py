@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Ilje Cho, Rohan Dahale, Date: 14 May 2024
+# Author: Ilje Cho, Rohan Dahale, Date: 12 July 2024
 ######################################################################
 
 # Import libraries
@@ -11,7 +11,6 @@ from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
-
 import argparse
 import os
 import glob
@@ -19,7 +18,8 @@ from tqdm import tqdm
 import itertools 
 import sys
 from copy import copy
-
+from utilities import *
+colors, titles, labels, mfcs, mss = common()
 
 # Parsing arguments function
 def create_parser():
@@ -41,66 +41,7 @@ def create_parser():
 
 # List of parsed arguments
 args = create_parser().parse_args()
-######################################################################
-# Plotting Setup
-######################################################################
-#plt.rc('text', usetex=True)
-import matplotlib as mpl
-#mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-mpl.rcParams['figure.dpi']=300
-#mpl.rcParams["mathtext.default"] = 'regular'
-plt.rcParams["xtick.direction"]="in"
-plt.rcParams["ytick.direction"]="in"
-#plt.style.use('dark_background')
-mpl.rcParams["axes.labelsize"] = 20
-mpl.rcParams["xtick.labelsize"] = 18
-mpl.rcParams["ytick.labelsize"] = 18
-mpl.rcParams["legend.fontsize"] = 18
 
-from matplotlib import font_manager
-font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
-#mpl.rc('text', usetex=True)
-
-fe = font_manager.FontEntry(
-    fname='./fonts/Helvetica.ttf',
-    name='Helvetica')
-font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
-mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
-######################################################################
-
-# Time average data to 60s
-obs = eh.obsdata.load_uvfits(args.data)
-obs.add_scans()
-# From GYZ: If data used by pipelines is descattered (refractive + diffractive),
-# Add 2% error and deblur original data.
-if args.scat=='dsct':
-    # Refractive Scattering
-    #obs = obs.add_fractional_noise(0.02)
-    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
-    # Diffractive Scattering
-    sm = so.ScatteringModel()
-    obs = sm.Deblur_obs(obs)
-
-obs = obs.avg_coherent(60.0)
-obs = obs.add_fractional_noise(0.01)
-
-if args.pol=='I':
-    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='vis'))
-elif args.pol=='Q':
-    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='qvis'))
-elif args.pol=='U':
-    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='uvis'))
-elif args.pol=='V':
-    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='vvis'))
-else:
-    print('Parse vaild pol string value: I, Q, U, V')
-
-obs.add_scans()
-times = []
-for t in obs.scans:
-    times.append(t[0])
-obslist = obs.split_obs()
-######################################################################
 outpath = args.outpath
 pol = args.pol
 
@@ -117,85 +58,25 @@ if args.dogmv!='none':
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
     
-# Truncating the times and obslist based on submitted movies
-obslist_tn=[]
-min_arr=[] 
-max_arr=[]
-for p in paths.keys():
-    mv=eh.movie.load_hdf5(paths[p])
-    min_arr.append(min(mv.times))
-    max_arr.append(max(mv.times))
-x=np.argwhere(times>max(min_arr))
-ntimes=[]
-for t in x:
-    ntimes.append(times[t[0]])
-    obslist_tn.append(obslist[t[0]])
-times=[]
-obslist_t=[]
-y=np.argwhere(min(max_arr)>ntimes)
-for t in y:
-    times.append(ntimes[t[0]])
-    obslist_t.append(obslist_tn[t[0]])
-   
-    
-polpaths={}
-for p in paths.keys():
-    mv=eh.movie.load_hdf5(paths[p])
-    im=mv.get_image(times[0])
-    
-    if pol=='I':
-       if len(im.ivec)>0:
-            polpaths[p]=paths[p]
-    elif pol=='Q':
-        if len(im.qvec)>0:
-            polpaths[p]=paths[p]
-    elif pol=='U':
-        if len(im.uvec)>0:
-            polpaths[p]=paths[p]
-    elif pol=='V':
-        if len(im.vvec)>0:
-            polpaths[p]=paths[p]
-    else:
-        print('Parse a vaild pol value')
-    
-colors = {   
-            'kine'     : 'xkcd:azure',
-            'ehtim'    : 'forestgreen',
-            'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson',
-            'resolve'  : 'tab:orange'
-        }
+######################################################################
 
-labels = {  
-            'kine'     : 'kine',
-            'ehtim'    : 'ehtim',
-            'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM',
-            'resolve'  : 'resolve'
-        }
+obs = eh.obsdata.load_uvfits(args.data)
+obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
 
+if args.pol=='I':
+    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='vis'))
+elif args.pol=='Q':
+    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='qvis'))
+elif args.pol=='U':
+    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='uvis'))
+elif args.pol=='V':
+    clphs = pd.DataFrame(obs.c_phases(count='max', vtype='vvis'))
+else:
+    print('Parse vaild pol string value: I, Q, U, V')
 
-def select_triangle(tab, st1, st2, st3):
-    stalist = list(itertools.permutations([st1, st2, st3]))
-    idx = []
-    for stations in stalist:
-        ant1, ant2, ant3 = stations
-        subidx = np.where((tab["t1"].values == ant1) &
-                          (tab["t2"].values == ant2) &
-                          (tab["t3"].values == ant3) )
-        idx +=  list(subidx[0])
-
-    newtab = tab.take(idx).sort_values(by=["time"]).reset_index(drop=True)
-    return newtab
-
-# reduced-chi2 of closure phases
-def rchi_cp(cph, cph_sigma, cph_mod):
-    ''' reduced-chi2 of closure phases '''
-    rchicp = np.sum( (1 - np.cos(np.deg2rad(cph-cph_mod)))/(np.deg2rad(cph_sigma)**2) ) * 2/len(cph)
-    return rchicp
+######################################################################
 
 tri_list = [('AZ', 'LM', 'SM'), ('AA', 'AZ', 'SM'), ('AA', 'LM', 'SM')]
-
 
 ######################################################################
 mov_clphs = dict()
@@ -214,6 +95,9 @@ for p in polpaths.keys():
             im.rf = obslist_t[ii].rf
             if im.xdim%2 == 1:
                 im = im.regrid_image(targetfov=im.fovx(), npix=im.xdim-1)
+                im.rf=obslist_t[ii].rf
+                im.ra=obslist_t[ii].ra
+                im.dec=obslist_t[ii].dec
             obs_mod = im.observe_same(obslist_t[ii], add_th_noise=False, ttype='fast')
 
             # closure phase

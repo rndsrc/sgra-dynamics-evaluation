@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 14 May 2024
+# Author: Rohan Dahale, Date: 12 July 2024
 ######################################################################
 
 # Import libraries
@@ -11,10 +11,12 @@ from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
-
+import scipy
 import argparse
 import os
 import glob
+from utilities import *
+colors, titles, labels, mfcs, mss = common()
 
 # Parsing arguments function
 def create_parser():
@@ -36,56 +38,6 @@ def create_parser():
 
 # List of parsed arguments
 args = create_parser().parse_args()
-######################################################################
-# Plotting Setup
-######################################################################
-#plt.rc('text', usetex=True)
-import matplotlib as mpl
-#mpl.rc('font', **{'family':'serif', 'serif':['Computer Modern Roman'], 'monospace': ['Computer Modern Typewriter']})
-mpl.rcParams['figure.dpi']=300
-#mpl.rcParams["mathtext.default"] = 'regular'
-plt.rcParams["xtick.direction"]="in"
-plt.rcParams["ytick.direction"]="in"
-plt.rcParams["ytick.major.size"]=5
-plt.rcParams["ytick.minor.size"]=2.5
-#plt.style.use('dark_background')
-mpl.rcParams["axes.labelsize"] = 20
-mpl.rcParams["xtick.labelsize"] = 18
-mpl.rcParams["ytick.labelsize"] = 18
-mpl.rcParams["legend.fontsize"] = 18
-
-from matplotlib import font_manager
-font_dirs = font_manager.findSystemFonts(fontpaths='./fonts/', fontext="ttf")
-#mpl.rc('text', usetex=True)
-fe = font_manager.FontEntry(
-    fname='./fonts/Helvetica.ttf',
-    name='Helvetica')
-font_manager.fontManager.ttflist.insert(0, fe) # or append is fine
-mpl.rcParams['font.family'] = fe.name # = 'your custom ttf font name'
-######################################################################
-
-# Time average data to 60s
-obs = eh.obsdata.load_uvfits(args.data)
-obs.add_scans()
-# From GYZ: If data used by pipelines is descattered (refractive + diffractive),
-# Add 2% error and deblur original data.
-if args.scat=='dsct':
-    # Refractive Scattering
-    #obs = obs.add_fractional_noise(0.02)
-    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
-    # Diffractive Scattering
-    sm = so.ScatteringModel()
-    obs = sm.Deblur_obs(obs)
-
-obs = obs.avg_coherent(60.0)
-obs = obs.add_fractional_noise(0.01)
-
-obs.add_scans()
-times = []
-for t in obs.scans:
-    times.append(t[0])
-obslist = obs.split_obs()
-######################################################################
     
 pathmovt  = args.truthmv
 outpath = args.outpath
@@ -103,42 +55,10 @@ if args.ngmv!='none':
     paths['ngmem']=args.ngmv
 ######################################################################
 
-# Truncating the times and obslist based on submitted movies
-obslist_tn=[]
-min_arr=[] 
-max_arr=[]
-for p in paths.keys():
-    mv=eh.movie.load_hdf5(paths[p])
-    min_arr.append(min(mv.times))
-    max_arr.append(max(mv.times))
-x=np.argwhere(times>max(min_arr))
-ntimes=[]
-for t in x:
-    ntimes.append(times[t[0]])
-    obslist_tn.append(obslist[t[0]])
-times=[]
-obslist_t=[]
-y=np.argwhere(min(max_arr)>ntimes)
-for t in y:
-    times.append(ntimes[t[0]])
-    obslist_t.append(obslist_tn[t[0]])
+obs = eh.obsdata.load_uvfits(args.data)
+obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(obs, args, paths)
+
 ######################################################################
-
-colors = { 
-            'kine'     : 'xkcd:azure',
-            'resolve'  : 'tab:orange',
-            'ehtim'    : 'forestgreen',
-            'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson'
-        }
-
-labels = {
-            'kine'     : 'kine',
-            'resolve'  : 'resolve',
-            'ehtim'    : 'ehtim',
-            'doghit'   : 'DoG-HiT',
-            'ngmem'    : 'ngMEM'
-        }
 
 fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(28,8), sharex=True)
 
@@ -160,7 +80,8 @@ ax[3].set_ylim(0,7)
 
 
 mvt=eh.movie.load_hdf5(pathmovt)
-if args.scat=='dsct':
+#if args.scat=='dsct':
+if args.scat!='sct':
     mvt=mvt.blur_circ(fwhm_x=15*eh.RADPERUAS, fwhm_x_pol=15*eh.RADPERUAS, fwhm_t=0)
 
 mv_nxcorr={}
@@ -210,16 +131,16 @@ for pol in pollist:
         for im in imlist:
             im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
-        mean = np.mean(imlistarr,axis=0)
+        median = np.median(imlistarr,axis=0)
         for im in imlist:
             if pol=='I':
-                im.ivec= mean.flatten()
+                im.ivec= median.flatten()
             elif pol=='Q':
-                im.qvec= mean.flatten()
+                im.qvec= median.flatten()
             elif pol=='U':
-                im.uvec= mean.flatten()
+                im.uvec= median.flatten()
             elif pol=='V':
-                im.vvec= mean.flatten()
+                im.vvec= median.flatten()
     
 
         imlist_t =[mvt.get_image(t) for t in times]
@@ -227,16 +148,16 @@ for pol in pollist:
         for im in imlist_t:
             im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
-        mean = np.mean(imlistarr,axis=0)
+        median = np.median(imlistarr,axis=0)
         for im in imlist_t:
             if pol=='I':
-                im.ivec= mean.flatten()
+                im.ivec= median.flatten()
             elif pol=='Q':
-                im.qvec= mean.flatten()
+                im.qvec= median.flatten()
             elif pol=='U':
-                im.uvec= mean.flatten()
+                im.uvec= median.flatten()
             elif pol=='V':
-                im.vvec= mean.flatten()
+                im.vvec= median.flatten()
 
         nxcorr_t=[]
         nxcorr_tab=[]
@@ -248,7 +169,7 @@ for pol in pollist:
             nxcorr_tab.append(nxcorr[0][0])
             i=i+1
         
-        table_vals[p][pol]=np.round(np.mean(np.array(nxcorr_tab)),3)
+        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),3)
                     
         mc=colors[p]
         alpha = 0.5

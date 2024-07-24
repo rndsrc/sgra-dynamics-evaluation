@@ -9,7 +9,6 @@ import ehtplot
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 import pdb
 import argparse
@@ -63,7 +62,7 @@ if args.ngmv!='none':
 
 obs = eh.obsdata.load_uvfits(args.data)
 obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
-
+    
 ######################################################################
 # Set parameters
 npix   = 128
@@ -85,11 +84,11 @@ for i in range(len(times)-1):
         j=0
         while u_times[len(u_times)-1] < times[i+1]-mean_dt:
             u_times.append(times[i]+j*mean_dt)
-            cmapsl.append('binary')
+            cmapsl.append('binary_usr')
             j=j+1
     else:
         u_times.append(times[i])
-        cmapsl.append('binary')
+        cmapsl.append('afmhot_us')
 
 ######################################################################
 
@@ -97,16 +96,26 @@ imlistIs = {}
 for p in paths.keys():
     mov = eh.movie.load_hdf5(paths[p])
     imlistI = []
+    imlistarr=[]
     for t in u_times:
         im = mov.get_image(t)
         if p=='truth':
             im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
         #else:
         im = im.blur_circ(fwhm_i=blur).regrid_image(fov, npix)
-        #im.ivec=im.ivec/im.total_flux()
+        im.ivec=im.ivec/im.total_flux()
         imlistI.append(im)
+        imlistarr.append(im.imarr(pol='I'))
+        
+    median = np.median(imlistarr,axis=0)
+    for im in imlistI:
+        im.ivec= np.clip(im.imarr(pol='I')-median,0,1).flatten()
+        
     imlistIs[p] =imlistI
-
+    #med = np.median(imlistIs[p],axis=0)
+    #for i in range(len(imlistIs[p])):
+        #imlistIs[p][i]= np.clip(imlistIs[p][i]-med,0,1)
+        
 
 def linear_interpolation(x, x1, y1, x2, y2):
     return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
@@ -126,75 +135,19 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
     # Set colorbar limits
     TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
     vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
-    
-    polmovies={}
-    for i, p in enumerate(movieIs.keys()):    
-        if len(movieIs[p][0].qvec) and len(movieIs[p][0].uvec) > 0 and p!='starwarps':
-            polmovies[p]=movieIs[p]
-                
+
     def plot_frame(f):
         for i, p in enumerate(movieIs.keys()):
             ax[i].clear() 
             TBfactor = 3.254e13/(movieIs[p][f].rf**2 * movieIs[p][f].psize**2)/1e9
             im =ax[i].imshow(np.array(movieIs[p][f].imarr(pol='I'))*TBfactor, cmap=cmaps[f], interpolation=interp, vmin=vmin, vmax=vmax, extent=lims)
-            
+        
             ax[i].set_title(titles[p], fontsize=18)
             ax[i].set_xticks([]), ax[i].set_yticks([])
             
-            if p in polmovies.keys():
-                self = polmovies[p][f]
-                amp = np.sqrt(self.qvec**2 + self.uvec**2)
-                scal=np.max(amp)*0.5
-
-                vx = (-np.sin(np.angle(self.qvec+1j*self.uvec)/2)*amp/scal).reshape(self.ydim, self.xdim)
-                vy = ( np.cos(np.angle(self.qvec+1j*self.uvec)/2)*amp/scal).reshape(self.ydim, self.xdim)
-
-                # tick color will be proportional to mfrac
-                mfrac=(amp/self.ivec).reshape(self.xdim, self.ydim)
-                    
-                pcut = 0.1
-                mcut = 0.
-                skip = 10
-                imarr = self.imvec.reshape(self.ydim, self.xdim)
-                Imax=max(self.imvec)
-                mfrac = np.ma.masked_where(imarr < pcut * Imax, mfrac) 
-
-                #new version with sharper cuts
-                mfrac_map=(np.sqrt(self.qvec**2+self.uvec**2)).reshape(self.xdim, self.ydim)
-                QUmax=max(np.sqrt(self.qvec**2+self.uvec**2))
-                pcut=0.1
-                mfrac_m = np.ma.masked_where(mfrac_map < pcut * QUmax , mfrac)
-                pcut=0.1
-                mfrac_m = np.ma.masked_where(imarr < pcut * Imax, mfrac_m)
-                ######
-
-                pixel=self.psize/eh.RADPERUAS #uas
-                FOV=pixel*self.xdim
-
-                # generate 2 2d grids for the x & y bounds
-                y, x = np.mgrid[slice(-FOV/2, FOV/2, pixel),
-                                slice(-FOV/2, FOV/2, pixel)]
-
-                x = np.ma.masked_where(imarr < pcut * Imax, x) 
-                y = np.ma.masked_where(imarr < pcut * Imax, y) 
-                vx = np.ma.masked_where(imarr < pcut * Imax, vx) 
-                vy = np.ma.masked_where(imarr < pcut * Imax, vy) 
-                
-  
-                cnorm=Normalize(vmin=0.0, vmax=1.0)
-                tickplot = ax[i].quiver(-x[::skip, ::skip],-y[::skip, ::skip],vx[::skip, ::skip],vy[::skip, ::skip],
-                               mfrac_m[::skip,::skip],
-                               headlength=0,
-                               headwidth = 1,
-                               pivot='mid',
-                               width=0.01,
-                               cmap='rainbow',
-                               norm=cnorm,
-                               scale=16)
         if f==0:
             ax1 = fig.add_axes([linear_interpolation(num_subplots, 2, 0.82, 7, 0.92), linear_interpolation(num_subplots, 2, 0.025, 7, 0.1), linear_interpolation(num_subplots, 2, 0.035, 7, 0.01), linear_interpolation(num_subplots, 2, 0.765, 7, 0.6)] , anchor = 'E') 
-            cbar = fig.colorbar(tickplot, cmap='rainbow', cax=ax1, pad=0.14,fraction=0.038, orientation="vertical") 
-            cbar.set_label('$|m|$') 
+            fig.colorbar(im, cax=ax1, ax=None, label = '$T_B$ ($10^9$ K)')
         
         plt.suptitle(f"{u_times[f]:.2f} UT", y=0.95, fontsize=22)
 
