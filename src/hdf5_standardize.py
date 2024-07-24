@@ -22,8 +22,8 @@ args = create_parser().parse_args()
 npix   = 128
 fov    = 200 * eh.RADPERUAS
 ntimes = 100
-tstart = 11.11 #10.94 #10.91 
-tstop  = 13.70 #13.90 #14.04 
+tstart = 10.91 
+tstop  = 14.03 
 
 # tstart and tstop from obsfile of an example synthetic data
 #obs = eh.obsdata.load_uvfits('model1_Ma+0.94_w3_Rh160_i30_3601_LO_tint60_syserr2_deblurTrue_reftypequarter1.uvfits')
