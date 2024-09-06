@@ -1,24 +1,24 @@
-using Distributed
-@everywhere begin
-    const filedir = @__DIR__
-end
-
-using Pkg; Pkg.activate(filedir)
+using Pkg; Pkg.activate(@__DIR__)
 using Distributed
 using DelimitedFiles
-
-@everywhere begin
-    using Pkg;Pkg.activate(filedir)
-end
-
 using Comonicon
 using VLBIImagingSummaryStats
 using DataFrames
 using CSV
 using Comrade
+using VIDA
+
+addprocs(8)
+
 @everywhere begin
+    using Pkg;Pkg.activate(@__DIR__)
+    using DelimitedFiles
     using Comrade
     using VLBIImagingSummaryStats
+    using Comonicon
+    using DataFrames
+    using CSV
+    using VIDA
 end
 
 function loaddir(file)

@@ -31,26 +31,16 @@ Threads: 1 default, 0 interactive, 1 GC (on 112 virtual cores)
 using Pkg
 Pkg.activate(@__DIR__)
 using Distributed
-@everywhere begin
-    using Pkg; Pkg.activate(@__DIR__)
-end
-
-@everywhere using VIDA
-
+using VIDA
 using ArgParse
 using CSV
 using DataFrames
 using Random
 using Glob
 using Comrade
-
-@everywhere begin
-    using Comrade
-    using OptimizationBBO
-    using OptimizationMetaheuristics
-    using OptimizationCMAEvolutionStrategy
-end
-
+using OptimizationBBO
+using OptimizationMetaheuristics
+using OptimizationCMAEvolutionStrategy
 
 function parse_commandline()
     s = ArgParseSettings()
@@ -94,6 +84,23 @@ function parse_commandline()
     end
     return parse_args(s)
 end
+
+addprocs(Int(parsed_args["stride"]/4))
+
+@everywhere begin
+    using Pkg; Pkg.activate(@__DIR__)
+    using VIDA
+    using ArgParse
+    using CSV
+    using DataFrames
+    using Random
+    using Glob
+    using Comrade
+    using OptimizationBBO
+    using OptimizationMetaheuristics
+    using OptimizationCMAEvolutionStrategy
+end
+
 
 function main()
     #Parse the command line arguments

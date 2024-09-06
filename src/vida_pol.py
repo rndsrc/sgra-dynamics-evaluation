@@ -88,7 +88,7 @@ for p in paths.keys():
             i=i+1
         
         os.system(f'realpath {folder}/temp/*.fits > {folder}/temp/filelist.txt')
-        os.system(f'julia -p {cores} ./src/VLBIImagingSummaryStats.jl/scripts/summarystats/main.jl {folder}/temp/filelist.txt {outpath_csv} -s {cores}')
+        os.system(f'julia ./src/VLBIImagingSummaryStats.jl/scripts/summarystats/main.jl {folder}/temp/filelist.txt {outpath_csv} -s {cores}')
         os.system(f'rm -r {folder}/temp/')
 
 ######################################################################
