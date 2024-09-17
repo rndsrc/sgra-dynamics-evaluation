@@ -106,7 +106,8 @@ def common():
     
 def process_obs(obs,args,paths):
     obs.add_scans()
-    
+    obs = obs.avg_coherent(60)
+    obs.add_scans()
     obslist = obs.split_obs()
     times = []
     for o in obslist:
@@ -269,7 +270,8 @@ def get_nxcorr_cri_beam(im, beamparams, pol):
 
 def process_obs_weights(obs,args,paths):
     obs.add_scans()
-
+    obs = obs.avg_coherent(60)
+    obs.add_scans()
     obslist = obs.split_obs()
     times = []
     for o in obslist:

@@ -1,7 +1,4 @@
-using Pkg
-Pkg.activate(@__DIR__)
-Pkg.instantiate()
-Pkg.precompile()
+using Pkg; Pkg.activate(@__DIR__)
 
 using VIDA
 using ArgParse

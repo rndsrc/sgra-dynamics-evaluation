@@ -130,7 +130,7 @@ for p in paths.keys():
     df = pd.read_csv(s[p])
 
     times=[]
-    for t in df['files']:
+    for t in df['file']:
         times.append(float(os.path.basename(t)[:-5]))
 
     m_net = df['m_net']

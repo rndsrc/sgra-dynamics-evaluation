@@ -27,9 +27,9 @@ Threads: 1 default, 0 interactive, 1 GC (on 112 virtual cores)
 """
 
 using Pkg; Pkg.activate(@__DIR__)
-Pkg.instantiate()
-Pkg.precompile()
 using Distributed
+@everywhere using Pkg
+@everywhere Pkg.activate(@__DIR__)
 using ArgParse
 using DelimitedFiles
 using DataFrames
@@ -83,6 +83,8 @@ end
 addprocs(8)
 
 @everywhere begin
+    using ArgParse
+    using Distributed
     using DelimitedFiles
     using DataFrames
     using CSV

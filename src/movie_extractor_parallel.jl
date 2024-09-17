@@ -33,8 +33,8 @@ Threads: 1 default, 0 interactive, 1 GC (on 112 virtual cores)
 
 using Pkg
 Pkg.activate(@__DIR__)
-Pkg.instantiate()
-Pkg.precompile()
+@everywhere using Pkg
+@everywhere Pkg.activate(@__DIR__)
 using Distributed
 using VIDA
 using ArgParse
@@ -94,7 +94,6 @@ parsed_args = parse_commandline()
 addprocs(Int(parsed_args["stride"]/4))
 
 @everywhere begin
-    using Pkg; Pkg.activate(@__DIR__)
     using VIDA
     using ArgParse
     using CSV

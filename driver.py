@@ -50,7 +50,11 @@ eval_VIDA             = True  # VIDA templates fits : total and dynamic componen
 eval_pattern_speed    = True  # Pattern speed for ring models
 
 # Physical CPU cores to be used
-cores = 100
+cores = 32
+
+# Only when running for the first time
+#setupdir=os.getcwd()+'/src'
+#os.system(f'julia {setupdir}/setup.jl')
 
 ev.evaluation(subdir=subdir, scat=scat, resultsdir=resultsdir, eval_chisq=eval_chisq, 
          eval_closure_phases=eval_closure_phases, eval_amplitudes=eval_amplitudes, 
