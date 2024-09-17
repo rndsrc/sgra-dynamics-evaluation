@@ -72,7 +72,7 @@ for p in paths.keys():
     #im.ivec = im.ivec/im.total_flux()
     if p=='truth':
         if args.scat!='onsky':
-            im = im.blur_circ(fwhm_i=15*eh.RAPERUAS, fwhm_pol=15*eh.RAPERUAS)
+            im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS)
     imlistIs[p] =im
 
 

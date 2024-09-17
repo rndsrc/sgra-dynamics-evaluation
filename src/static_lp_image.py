@@ -71,7 +71,7 @@ for p in paths.keys():
     im = eh.image.load_fits(paths[p])
     if p=='truth':
         if args.scat!='onsky':
-            im = im.blur_circ(fwhm_i=15*eh.RAPERUAS, fwhm_pol=15*eh.RAPERUAS)
+            im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS)
     imlists[p] =im
 
 def linear_interpolation(x, x1, y1, x2, y2):
