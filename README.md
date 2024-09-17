@@ -8,6 +8,7 @@
     - [ehtplot](https://github.com/liamedeiros/ehtplot)
 - Install Julia 1.10.4 with [juliaup](https://github.com/JuliaLang/juliaup)
 - You just need to modify `driver.py` and run it.
+- When running `driver.py` for the first time, uncomment the lines for `setup.jl`.
 
 
 # How to use the driver?
@@ -18,20 +19,22 @@ Full path to the directory that contains:
 2) Data .uvfits     | `<model>_<band>_<noise>_<scattering>.uvfits` (e.g. mring+hsCCW_LO_thermal+phase_onsky.uvfits)
 3) Reconstructions .hdf5 | `<model>_<band>_<noise>_<scattering>_<pipeline>.hdf`5` (e.g. mring+hsCCW_LO+HI_thermal+phase_onsky_resolve.hdf5)
 
-`<model>      : crescent, disk, edisk, point, double, ring, 
+```
+<model>      : crescent, disk, edisk, point, double, ring, 
                mring+hsCCW, mring+hsCW, xmasring, mring+not-center-hs, mring+4static-hs,
-               SGRA, GRMHD`
+               SGRA, GRMHD
          
-`<band>       : LO, HI, LO+HI`
-`<noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat`
-`<scattering> : onsky, deblur, dsct`
-`<pipeline>   : kine, resolve, ehtim, doghit, ngmem`
+<band>       : LO, HI, LO+HI
+<noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat
+<scattering> : onsky, deblur, dsct
+<pipeline>   : kine, resolve, ehtim, doghit, ngmem
+```
 
 ---
 ### 2. Define scattering in the data used for reconstructions
 
 ```
-scat  = 'none'   # Options: onsky, dsct, none
+scat  = 'none'   # Options: onsky, deblur, dsct, none
 ```
 
 ---         
