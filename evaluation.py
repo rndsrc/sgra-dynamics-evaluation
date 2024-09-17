@@ -129,7 +129,7 @@ def evaluation(subdir='./submissions/', scat='none', resultsdir='./results/', ev
 
         if dataf.find('sgra') != -1 or dataf.find('SGRA') != -1 or dataf.find('hops') != -1:
             modelname='sgra'
-            scat = 'dsct'
+            #scat = 'dsct'
 
         mvsort = dict()
         for p in movies.keys():
