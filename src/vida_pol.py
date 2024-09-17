@@ -91,7 +91,7 @@ for p in paths.keys():
             i=i+1
         
         os.system(f'realpath {folder}/temp/*.fits > {folder}/temp/filelist.txt')
-        os.system(f'julia {codedir}/vida_pol.jl --imfiles {folder}/temp/filelist.txt --outname {outpath_csv} --stride {cores}')
+        os.system(f'julia {codedir}/src/vida_pol.jl --imfiles {folder}/temp/filelist.txt --outname {outpath_csv} --stride {cores}')
         os.system(f'rm -r {folder}/temp/')
 
 ######################################################################
