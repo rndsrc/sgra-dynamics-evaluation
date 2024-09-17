@@ -4,8 +4,8 @@
 ######################################################################
 
 """
-Julia Version 1.10.3
-Commit 0b4590a5507 (2024-04-30 10:59 UTC)
+Julia Version 1.10.4
+Commit 48d4fd48430 (2024-06-04 10:41 UTC)
 Build Info:
   Official https://julialang.org/ release
 Platform Info:
@@ -18,18 +18,23 @@ Threads: 1 default, 0 interactive, 1 GC (on 112 virtual cores)
 
   [c7e460c6] ArgParse v1.2.0
   [336ed68f] CSV v0.10.14
-  [99d987ce] Comrade v0.9.4
+⌃ [13f3f980] CairoMakie v0.11.11
+  [863f3e99] Comonicon v1.0.8
+⌃ [99d987ce] Comrade v0.9.4
   [a93c6f00] DataFrames v1.6.1
+  [8bb1440f] DelimitedFiles v1.9.1
   [c27321d9] Glob v1.3.1
-  [3e6eede4] OptimizationBBO v0.2.1
+⌃ [3e6eede4] OptimizationBBO v0.2.1
   [bd407f91] OptimizationCMAEvolutionStrategy v0.2.1
   [3aafef2f] OptimizationMetaheuristics v0.2.0
-  [4096cdfb] VIDA v0.11.7
+⌃ [4096cdfb] VIDA v0.11.7
   [9a3f8284] Random
 """
 
 using Pkg
 Pkg.activate(@__DIR__)
+Pkg.instantiate()
+Pkg.precompile()
 using Distributed
 using VIDA
 using ArgParse
@@ -85,6 +90,7 @@ function parse_commandline()
     return parse_args(s)
 end
 
+parsed_args = parse_commandline()
 addprocs(Int(parsed_args["stride"]/4))
 
 @everywhere begin

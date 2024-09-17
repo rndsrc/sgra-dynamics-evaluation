@@ -5,8 +5,9 @@
 import os
 import glob
 import ehtim as eh
+codedir=os.getcwd()+'/src'
 
-def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='none', resultsdir='./results/', eval_chisq=True, eval_closure_phases=True, eval_amplitudes=True, plot_gifs=True, eval_nxcorr=True, plot_mbreve=True, plot_vis_var=True, eval_rex=True, eval_VIDA_pol=True, eval_VIDA=True, eval_pattern_speed=True, cores=100):
+def evaluation(subdir='./submissions/', scat='none', resultsdir='./results/', eval_chisq=True, eval_closure_phases=True, eval_amplitudes=True, plot_gifs=True, eval_nxcorr=True, plot_mbreve=True, plot_vis_var=True, eval_rex=True, eval_VIDA_pol=True, eval_VIDA=True, eval_pattern_speed=True, cores=100):
     if not os.path.exists(f'{resultsdir}'):
         os.makedirs(f'{resultsdir}')
     # Dictionary of vida templates available
@@ -45,17 +46,18 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
     truth=[]
 
     for m in movielist:
-        if m.find('resolve')!=-1:
+        n = os.basename(m)
+        if n.find('resolve')!=-1:
             resolve.append(m)
-        elif m.find('kine')!=-1:
+        elif n.find('kine')!=-1:
             kine.append(m)
-        elif m.find('ngmem')!=-1:
+        elif n.find('ngmem')!=-1:
             ngmem.append(m)
-        elif m.find('doghit')!=-1:
+        elif n.find('doghit')!=-1:
             doghit.append(m)
-        elif m.find('ehtim')!=-1:
+        elif n.find('ehtim')!=-1:
             ehtim.append(m)
-        elif m.find('truth')!=-1 and m.find('HI')==-1:
+        elif n.find('truth')!=-1 and m.find('HI')==-1:
             truth.append(m)
 
     movies={
@@ -150,7 +152,6 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
         print(f'Cores: {cores}')
         print('')
         print(f'Data:  {datap}')
-        print(f'Noise:  {noise}')
         print(f'Scattering Type:  {scat}')
 
         if modelname!='sgra':
@@ -212,7 +213,7 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if eval_chisq:
                 outpath=f'{resultsdir}/{model}_chisq_{pol}'
                 if not os.path.exists(outpath+'.png'):
-                    os.system(f'python ./src/chisq.py -d {data} {paths} -o {outpath} --pol {pol} --scat {scat}')
+                    os.system(f'python {codedir}/chisq.py -d {data} {paths} -o {outpath} --pol {pol} --scat {scat}')
 
             #########################
             # CPHASE
@@ -220,7 +221,7 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if eval_closure_phases:
                 outpath_tri=f'{resultsdir}/{model}_triangle_{pol}'
                 if not os.path.exists(outpath_tri+'.png'):
-                    os.system(f'python ./src/triangles.py -d {data} {paths} -o {outpath_tri} --pol {pol} --scat {scat}')
+                    os.system(f'python {codedir}/triangles.py -d {data} {paths} -o {outpath_tri} --pol {pol} --scat {scat}')
 
             #########################
             # AMP
@@ -228,7 +229,7 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if eval_amplitudes:
                 outpath_amp=f'{resultsdir}/{model}_amplitude_{pol}'
                 if not os.path.exists(outpath_amp+'.png'):
-                    os.system(f'python ./src/amplitudes.py -d {data} {paths} -o {outpath_amp} --pol {pol} --scat {scat}')
+                    os.system(f'python {codedir}/amplitudes.py -d {data} {paths} -o {outpath_amp} --pol {pol} --scat {scat}')
 
         ##############################################################################################
         # Static Part of the Movie
@@ -239,10 +240,10 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
 
         if modelname!='sgra':
             paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-            os.system(f'python ./src/static.py --data {data} {paths} -o {outpath} --scat {scat}')
+            os.system(f'python {codedir}/static.py --data {data} {paths} -o {outpath} --scat {scat}')
         else:
             paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-            os.system(f'python ./src/static.py --data {data} {paths} -o {outpath} --scat {scat}')
+            os.system(f'python {codedir}/static.py --data {data} {paths} -o {outpath} --scat {scat}')
     
         ##############################################################################################
         # Dynamic Part of the Movie
@@ -253,10 +254,10 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
 
         if modelname!='sgra':
             paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-            os.system(f'python ./src/dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
+            os.system(f'python {codedir}/dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
         else:
             paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-            os.system(f'python ./src/dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
+            os.system(f'python {codedir}/dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################
         # NXCORR
@@ -266,23 +267,23 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
                 paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
                 outpath =f'{resultsdir}/{model}_nxcorr'
                 if not os.path.exists(outpath+'.png'):
-                    os.system(f'python ./src/nxcorr.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/nxcorr.py --data {data} {paths} -o {outpath} --scat {scat}')
 
                 outpath =f'{resultsdir}/{model}_nxcorr_static'
                 if not os.path.exists(outpath+'.png'):
-                    os.system(f'python ./src/nxcorr_static.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/nxcorr_static.py --data {data} {paths} -o {outpath} --scat {scat}')
 
                 outpath =f'{resultsdir}/{model}_nxcorr_dynamic'
                 if not os.path.exists(outpath+'.png'):
-                    os.system(f'python ./src/nxcorr_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/nxcorr_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
 
                 outpath =f'{resultsdir}/{model}_nxcorr_static_threshold'
                 if not os.path.exists(outpath+'.png'):
-                    os.system(f'python ./src/nxcorr_static_threshold.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/nxcorr_static_threshold.py --data {data} {paths} -o {outpath} --scat {scat}')
 
                 outpath =f'{resultsdir}/{model}_nxcorr_dynamic_threshold'
                 if not os.path.exists(outpath+'.png'):
-                    os.system(f'python ./src/nxcorr_dynamic_threshold.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/nxcorr_dynamic_threshold.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################
         # MBREVE
@@ -291,7 +292,7 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
             outpath_mbreve=f'{resultsdir}/{model}_mbreve.png'
             if not os.path.exists(outpath_mbreve):
-                os.system(f'python ./src/mbreve.py -d {data} {paths} -o {outpath_mbreve} --scat {scat}')
+                os.system(f'python {codedir}/mbreve.py -d {data} {paths} -o {outpath_mbreve} --scat {scat}')
 
         ##############################################################################################      
         # Stokes I GIF
@@ -301,10 +302,10 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if not os.path.exists(outpath+'.gif'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################      
         # Stokes I, P Dynamic Component GIF
@@ -314,19 +315,19 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if not os.path.exists(outpath+'.gif'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
 
             outpath =f'{resultsdir}/{model}_dynamic_lp_gif'
             if not os.path.exists(outpath+'.gif'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_dynamic_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_dynamic_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_dynamic_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_dynamic_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################      
         # Stokes I, P Static Component Plot
@@ -355,19 +356,19 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if not os.path.exists(outpath+'.png'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmvs} --kinemv {kinemvs} --dogmv {dogmvs} --ngmv {ngmvs} --resmv {resmvs} --ehtmv {ehtmvs}'
-                    os.system(f'python ./src/static_image.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/static_image.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemvs} --dogmv {dogmvs} --ngmv {ngmvs} --resmv {resmvs} --ehtmv {ehtmvs}'
-                    os.system(f'python ./src/static_image.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/static_image.py --data {data} {paths} -o {outpath} --scat {scat}')
 
             outpath =f'{resultsdir}/{model}_static_lp'
             if not os.path.exists(outpath+'.png'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmvs} --kinemv {kinemvs} --dogmv {dogmvs} --ngmv {ngmvs} --resmv {resmvs} --ehtmv {ehtmvs}'
-                    os.system(f'python ./src/static_lp_image.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/static_lp_image.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemvs} --dogmv {dogmvs} --ngmv {ngmvs} --resmv {resmvs} --ehtmv {ehtmvs}'
-                    os.system(f'python ./src/static_lp_image.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/static_lp_image.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################      
         # Stokes P GIF
@@ -377,10 +378,10 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if not os.path.exists(outpath+'.gif'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_lp.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################      
         # Stokes V GIF
@@ -390,10 +391,10 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if not os.path.exists(outpath+'.gif'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_cp.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_cp.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/gif_cp.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/gif_cp.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################      
         # Visibility Variance
@@ -403,10 +404,10 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if not os.path.exists(outpath+'.png'):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/vis_variance.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/vis_variance.py --data {data} {paths} -o {outpath} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/vis_variance.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    os.system(f'python {codedir}/vis_variance.py --data {data} {paths} -o {outpath} --scat {scat}')
 
 
         ##############################################################################################
@@ -418,20 +419,20 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
                 if not os.path.exists(outpath+'.png') and not os.path.exists(outpath+'_pol.png'):
                     if modelname!='sgra':
                         paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                        os.system(f'python ./src/rex.py --data {data}  --scat {scat} {paths} -o {outpath}')
+                        os.system(f'python {codedir}/rex.py --data {data}  --scat {scat} {paths} -o {outpath}')
                     else:
                         paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                        os.system(f'python ./src/rex.py --data {data} --scat {scat} {paths} -o {outpath}')
+                        os.system(f'python {codedir}/rex.py --data {data} --scat {scat} {paths} -o {outpath}')
 
             if eval_VIDA_pol:
                 outpath=f'{resultsdir}/{model}_vida_pol.png'
                 if not os.path.exists(outpath):
                     if modelname!='sgra':
                         paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                        os.system(f'python ./src/vida_pol.py --data {data} {paths} -o {outpath} -c {cores} --scat {scat}')
+                        os.system(f'python {codedir}/vida_pol.py --data {data} {paths} -o {outpath} -c {cores} --scat {scat}')
                     else:
                         paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                        os.system(f'python ./src/vida_pol.py --data {data} {paths} -o {outpath} -c {cores} --scat {scat}')
+                        os.system(f'python {codedir}/vida_pol.py --data {data} {paths} -o {outpath} -c {cores} --scat {scat}')
 
         ##############################################################################################
         # VIDA
@@ -441,10 +442,10 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
             if not os.path.exists(outpath):
                 if modelname!='sgra':
                     paths=f'--truthmv {truthmv} --kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/vida.py --data {data} --model {vida_modelname} --template {template} {paths} -o {outpath} -c {cores} --scat {scat}')
+                    os.system(f'python {codedir}/vida.py --data {data} --model {vida_modelname} --template {template} {paths} -o {outpath} -c {cores} --scat {scat}')
                 else:
                     paths=f'--kinemv {kinemv} --dogmv {dogmv} --ngmv {ngmv} --resmv {resmv} --ehtmv {ehtmv}'
-                    os.system(f'python ./src/vida.py --data {data} --model {vida_modelname} --template {template} {paths} -o {outpath} -c {cores} --scat {scat}')
+                    os.system(f'python {codedir}/vida.py --data {data} --model {vida_modelname} --template {template} {paths} -o {outpath} -c {cores} --scat {scat}')
 
         ##############################################################################################
         # Interpolated Movie, Averaged Movie, VIDA Ring, Cylinder
@@ -481,27 +482,27 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
                     # Interpolated Movies
                     input= plist[i]
                     output=f'{resultsdir}/patternspeed/{os.path.basename(plist[i])}'
-                    os.system(f'python ./src/hdf5_standardize.py -i {input} -o {output}')
+                    os.system(f'python {codedir}/hdf5_standardize.py -i {input} -o {output}')
                     #Average Movies
                     input=f'{resultsdir}/patternspeed/{os.path.basename(plist[i])}'
                     fits=os.path.basename(plist[i])[:-5]+'.fits'
                     output=f'{resultsdir}/patternspeed/{fits}'
                     if nlist[i]=='truth':
-                        os.system(f'python ./src/avg_frame.py -i {input} -o {output} --truth')
+                        os.system(f'python {codedir}/avg_frame.py -i {input} -o {output} --truth --scat {scat}')
                     else:
-                        os.system(f'python ./src/avg_frame.py -i {input} -o {output}')
+                        os.system(f'python {codedir}/avg_frame.py -i {input} -o {output} --scat {scat}')
                     # VIDA Ring
                     fits=os.path.basename(plist[i])[:-5]+'.fits'
                     path=f'{resultsdir}/patternspeed/{fits}'
                     outpath = path[:-5]+'.csv'
                     if not os.path.exists(outpath):    
-                        os.system(f'julia ./src/ring_extractor.jl --in {path} --out {outpath}')
+                        os.system(f'julia {codedir}/ring_extractor.jl --in {path} --out {outpath}')
                         print(f'{os.path.basename(outpath)} created!')
                     # Cylinder
                     ipathmov=f'{resultsdir}/patternspeed/{os.path.basename(plist[i])}'
                     ringpath = ipathmov[:-5]+'.csv'
                     outpath  = ipathmov[:-5]
-                    os.system(f'python ./src/cylinder.py {ipathmov} {ringpath} {outpath}')
+                    os.system(f'python {codedir}/cylinder.py {ipathmov} {ringpath} {outpath}')
 
 
         if hotspot:          
@@ -533,9 +534,9 @@ def evaluation(subdir='./submissions/', noise='thermal+phasecorruptions', scat='
                 if not os.path.exists(outpath):
                     if modelname!='sgra':
                         paths=f'--truthmv {truthmvd} --kinemv {kinemvd} --dogmv {dogmvd} --ngmv {ngmvd} --resmv {resmvd} --ehtmv {ehtmvd}'
-                        os.system(f'python ./src/vida.py --data {data} --model {vida_modelname_dynamic} --template {template} {paths} -o {outpath} -c {cores} --scat {scat}')
+                        os.system(f'python {codedir}/vida.py --data {data} --model {vida_modelname_dynamic} --template {template} {paths} -o {outpath} -c {cores} --scat {scat}')
                     else:
                         paths=f'--kinemv {kinemvd} --dogmv {dogmvd} --ngmv {ngmvd} --resmv {resmvd} --ehtmv {ehtmvd}'
-                        os.system(f'python ./src/vida.py --data {data} --model {vida_modelname_dynamic} {paths} --template {template} -o {outpath} -c {cores} --scat {scat}')
+                        os.system(f'python {codedir}/vida.py --data {data} --model {vida_modelname_dynamic} {paths} --template {template} -o {outpath} -c {cores} --scat {scat}')
 
     

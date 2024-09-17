@@ -32,7 +32,7 @@ def create_parser():
     p.add_argument('--resmv',   type=str, default='none', help='path of resolve .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
                    help='name of output file with path')
-    p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
+    p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
 
     return p
 
@@ -81,7 +81,7 @@ ax[3].set_ylim(0,7)
 
 mvt=eh.movie.load_hdf5(pathmovt)
 #if args.scat=='dsct':
-if args.scat!='sct':
+if args.scat!='onsky':
     mvt=mvt.blur_circ(fwhm_x=15*eh.RADPERUAS, fwhm_x_pol=15*eh.RADPERUAS, fwhm_t=0)
 
 mv_nxcorr={}
@@ -129,7 +129,7 @@ for pol in pollist:
         imlist = [mv.get_image(t) for t in times]
         imlistarr=[]
         for im in imlist:
-            im.ivec=im.ivec/im.total_flux()
+            #im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
         median = np.median(imlistarr,axis=0)
         for im in imlist:
@@ -146,7 +146,7 @@ for pol in pollist:
         imlist_t =[mvt.get_image(t) for t in times]
         imlistarr=[]
         for im in imlist_t:
-            im.ivec=im.ivec/im.total_flux()
+            #im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
         median = np.median(imlistarr,axis=0)
         for im in imlist_t:

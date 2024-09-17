@@ -31,7 +31,7 @@ def create_parser():
     p.add_argument('--resmv',   type=str, default='none', help='path of resolve .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
                    help='name of output file with path')
-    p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
+    p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
 
 
     return p

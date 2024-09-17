@@ -1,5 +1,5 @@
 ##############################################################################################
-# Author: Rohan Dahale, Date: 23 July 2024, Version=v1.0
+# Author: Rohan Dahale, Date: 17 September 2024, Version=v1.1
 ##############################################################################################
 import os
 import glob
@@ -10,16 +10,18 @@ import evaluation as ev
 # `subdir`:
 
 Full path to the directory that contains: 
-1) Truth .hdf5             | <model>_<band>_truth.uvfits (e.g. mring+hsCCW_LO_truth.hdf5)
-2) Unprocessed .uvfits     | <model>_<band>.uvfits (e.g. mring+hsCCW_LO.uvfits)
-3) Reconstructions .uvfits | <model>_<band>_<pipeline>.uvfits (e.g. mring+hsCCW_LO+HI_resolve.hdf5)
+1) Truth .hdf5             | <model>_<band>_<noise>_<scattering>_truth.uvfits (e.g. mring+hsCCW_LO_thermal+phase_onsky_truth.hdf5)
+2) Data .uvfits     | <model>_<band>_<noise>_<scattering>.uvfits (e.g. mring+hsCCW_LO_thermal+phase_onsky.uvfits)
+3) Reconstructions .hdf5 | <model>_<band>_<noise>_<scattering>_<pipeline>.hdf5 (e.g. mring+hsCCW_LO+HI_thermal+phase_onsky_resolve.hdf5)
 
-<model>    : crescent, disk, edisk, point, double, ring, 
-             mring+hsCCW, mring+hsCW, xmasring, mring+not-center-hs, mring+4static-hs,
-             SGRA, GRMHD
+<model>      : crescent, disk, edisk, point, double, ring, 
+               mring+hsCCW, mring+hsCW, xmasring, mring+not-center-hs, mring+4static-hs,
+               SGRA, GRMHD
          
-<band>     : LO, HI, LO+HI
-<pipeline> : kine, resolve, ehtim, doghit, ngmem
+<band>       : LO, HI, LO+HI
+<noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat
+<scattering> : onsky, deblur, dsct
+<pipeline>   : kine, resolve, ehtim, doghit, ngmem
          
          
 # `resultsdir`
@@ -28,9 +30,7 @@ Full path to the directory that will contain all the results.
 
 # Submission Directory
 subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/mexico/submissions_test/'
-# Noise and Scattering in data used for reconstruction
-noise ='thermal+phasecorruptions'
-scat = 'none'   # Options: sct, dsct, none
+scat = 'none'   # Options: onsky, deblur, dsct
 # Results Directory
 resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/mexico/results_test/'
         
@@ -52,7 +52,7 @@ eval_pattern_speed    = True  # Pattern speed for ring models
 # Physical CPU cores to be used
 cores = 100
 
-ev.evaluation(subdir=subdir, noise=noise, scat=scat, resultsdir=resultsdir, eval_chisq=eval_chisq, 
+ev.evaluation(subdir=subdir, scat=scat, resultsdir=resultsdir, eval_chisq=eval_chisq, 
          eval_closure_phases=eval_closure_phases, eval_amplitudes=eval_amplitudes, 
          plot_gifs=plot_gifs, eval_nxcorr=eval_nxcorr, plot_mbreve=plot_mbreve, 
          plot_vis_var=plot_vis_var, eval_rex=eval_rex, eval_VIDA_pol=eval_VIDA_pol, 

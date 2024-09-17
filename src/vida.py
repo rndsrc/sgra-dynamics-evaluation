@@ -18,6 +18,9 @@ import glob
 from utilities import *
 colors, titles, labels, mfcs, mss = common()
 
+codedir = os.getcwd()
+
+
 # Parsing arguments function
 def create_parser():
     p = argparse.ArgumentParser()
@@ -35,7 +38,7 @@ def create_parser():
     p.add_argument('-c', '--cores', type=int, default='64',help='number of cores to use')
     p.add_argument('-o', '--outpath', type=str, default='./vida.png',
                    help='name of output file with path')
-    p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
+    p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
 
     return p
 
@@ -89,9 +92,10 @@ for p in paths.keys():
         input=f"{folder}/temp/{os.path.basename(paths[p])}"
         output = outpath_csv[p]
         if p=='truth':
-            os.system(f'julia -p {cores} ./src/movie_extractor_parallel.jl --input {input} --output {output} --template {template} --stride {cores} --blur 15.0')
+            if args.scat!='onsky':
+                os.system(f'julia -p {cores} {codedir}/movie_extractor_parallel.jl --input {input} --output {output} --template {template} --stride {cores} --blur 15.0')
         else:
-            os.system(f'julia -p {cores} ./src/movie_extractor_parallel.jl --input {input} --output {output} --template {template} --stride {cores}')
+            os.system(f'julia -p {cores} {codedir}/movie_extractor_parallel.jl --input {input} --output {output} --template {template} --stride {cores}')
         
         os.system(f'rm -r {folder}/temp/')
         

@@ -21,6 +21,8 @@ from copy import copy
 from utilities import *
 colors, titles, labels, mfcs, mss = common()
 
+codedir = os.getcwd()
+
 ######################################################################
 # Parsing arguments function
 def create_parser():
@@ -36,7 +38,7 @@ def create_parser():
     p.add_argument('--resmv',  type=str, default='none', help='path of resolve .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./plot.png', help='name of output file with path')
     p.add_argument('-c', '--cores', type=int, default='64',help='number of cores to use')
-    p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
+    p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
 
     return p
 
@@ -83,12 +85,13 @@ for p in paths.keys():
         i=0
         for im in iml:
             if p=='truth':
-                im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS)
+                if args.scat!='onsky':
+                    im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS)
             im.save_fits(f"{folder}/temp/{times[i]}.fits")
             i=i+1
         
         os.system(f'realpath {folder}/temp/*.fits > {folder}/temp/filelist.txt')
-        os.system(f'julia ./src/VLBIImagingSummaryStats.jl/scripts/summarystats/main.jl {folder}/temp/filelist.txt {outpath_csv} -s {cores}')
+        os.system(f'julia {codedir}/vida_pol.jl --imfiles {folder}/temp/filelist.txt --outname {outpath_csv} --stride {cores}')
         os.system(f'rm -r {folder}/temp/')
 
 ######################################################################

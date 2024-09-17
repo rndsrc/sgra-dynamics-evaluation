@@ -106,18 +106,7 @@ def common():
     
 def process_obs(obs,args,paths):
     obs.add_scans()
-    # If data used by pipelines is descattered (refractive + diffractive),
-    if args.scat=='dsct':
-        # Refractive Scattering
-        obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
-        # Diffractive Scattering
-        sm = so.ScatteringModel()
-        obs = sm.Deblur_obs(obs)
-
-    obs = obs.avg_coherent(60.0)
-    #obs = obs.add_fractional_noise(0.01)
     
-    obs.add_scans()
     obslist = obs.split_obs()
     times = []
     for o in obslist:
@@ -280,17 +269,7 @@ def get_nxcorr_cri_beam(im, beamparams, pol):
 
 def process_obs_weights(obs,args,paths):
     obs.add_scans()
-    if args.scat=='dsct':
-        # Refractive Scattering
-        obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
-        # Diffractive Scattering
-        sm = so.ScatteringModel()
-        obs = sm.Deblur_obs(obs)
 
-    obs = obs.avg_coherent(60.0)
-    #obs = obs.add_fractional_noise(0.01)
-
-    obs.add_scans()
     obslist = obs.split_obs()
     times = []
     for o in obslist:

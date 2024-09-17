@@ -31,8 +31,7 @@ def create_parser():
     p.add_argument('--resmv',  type=str, default='none',help='path of resolve .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./gif.gif', 
                    help='name of output file with path')
-    p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
-
+    p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
     return p
 
 # List of parsed arguments
@@ -95,10 +94,11 @@ for p in paths.keys():
     for t in u_times:
         im = mov.get_image(t)
         if p=='truth':
-            im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
+            if args.scat!='onsky':
+                im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
         #else:
         im = im.blur_circ(fwhm_i=blur).regrid_image(fov, npix)
-        im.ivec=im.ivec/im.total_flux()
+        #im.ivec=im.ivec/im.total_flux()
         imlistI.append(im)
     imlistIs[p] =imlistI
         

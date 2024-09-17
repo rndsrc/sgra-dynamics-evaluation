@@ -36,7 +36,7 @@ def create_parser():
     p.add_argument('-o', '--outpath', type=str, default='./amp.png', 
                    help='name of output file with path')
     p.add_argument('--pol',  type=str, default='I',help='I,Q,U,V')
-    p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
+    p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
 
     return p
 

@@ -33,7 +33,7 @@ def create_parser():
     p.add_argument('--resmv',  type=str, default='none',help='path of resolve .fits')
     p.add_argument('-o', '--outpath', type=str, default='./gif.gif', 
                    help='name of output file with path')
-    p.add_argument('--scat', type=str, default='none', help='sct, dsct, none')
+    p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
 
     return p
 
@@ -69,6 +69,9 @@ blur   = 0 * eh.RADPERUAS
 imlists = {}
 for p in paths.keys():
     im = eh.image.load_fits(paths[p])
+    if p=='truth':
+        if args.scat!='onsky':
+            im = im.blur_circ(fwhm_i=15*eh.RAPERUAS, fwhm_pol=15*eh.RAPERUAS)
     imlists[p] =im
 
 def linear_interpolation(x, x1, y1, x2, y2):
