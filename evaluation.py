@@ -46,7 +46,7 @@ def evaluation(subdir='./submissions/', scat='none', resultsdir='./results/', ev
     truth=[]
 
     for m in movielist:
-        n = os.basename(m)
+        n = os.path.basename(m)
         if n.find('resolve')!=-1:
             resolve.append(m)
         elif n.find('kine')!=-1:
