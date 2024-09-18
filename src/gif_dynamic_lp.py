@@ -217,7 +217,7 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
                 vy = np.ma.masked_where(imarr < pcut * Imax, vy) 
                 
   
-                cnorm=Normalize(vmin=0.0, vmax=1.0)
+                cnorm=Normalize(vmin=0.0, vmax=0.5)
                 tickplot = ax[i].quiver(-x[::skip, ::skip],-y[::skip, ::skip],vx[::skip, ::skip],vy[::skip, ::skip],
                                mfrac_m[::skip,::skip],
                                headlength=0,
