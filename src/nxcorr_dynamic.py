@@ -128,7 +128,7 @@ for pol in pollist:
         imlist_o = [mv.get_image(t) for t in times]
         
         # center the movie with repect to the truth movie frame 0
-        mvtruth_image=eh.movie.load_hdf5(polpaths['truth']).im_list()[0]
+        mvtruth_image=eh.movie.load_hdf5(pathmovt).im_list()[0]
         shifts = mvtruth_image.align_images(imlist_o)[1] #Shifts only from stokes I
         mean_shift = [int(np.round(np.mean(np.array(shifts)[:, 1]), 0)), int(np.round(np.mean(np.array(shifts)[:, 1]),0))]
         imlist=[]
