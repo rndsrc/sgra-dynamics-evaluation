@@ -20,7 +20,7 @@ Full path to the directory that contains:
          
 <band>       : LO, HI, LO+HI
 <noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat
-<scattering> : onsky, deblur, dsct
+<scattering> : onsky, deblur, dsct, none
 <pipeline>   : kine, resolve, ehtim, doghit, ngmem
          
          
@@ -30,7 +30,6 @@ Full path to the directory that will contain all the results.
 
 # Submission Directory
 subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/mexico/submissions_test/'
-scat = 'none'   # Options: onsky, deblur, dsct
 # Results Directory
 resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/mexico/results_test/'
         
@@ -56,7 +55,7 @@ cores = 32
 #setupdir=os.getcwd()+'/src'
 #os.system(f'julia {setupdir}/setup.jl')
 
-ev.evaluation(subdir=subdir, scat=scat, resultsdir=resultsdir, eval_chisq=eval_chisq, 
+ev.evaluation(subdir=subdir, resultsdir=resultsdir, eval_chisq=eval_chisq, 
          eval_closure_phases=eval_closure_phases, eval_amplitudes=eval_amplitudes, 
          plot_gifs=plot_gifs, eval_nxcorr=eval_nxcorr, plot_mbreve=plot_mbreve, 
          plot_vis_var=plot_vis_var, eval_rex=eval_rex, eval_VIDA_pol=eval_VIDA_pol, 

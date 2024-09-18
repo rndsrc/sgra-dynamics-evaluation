@@ -26,15 +26,8 @@ Full path to the directory that contains:
          
 <band>       : LO, HI, LO+HI
 <noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat
-<scattering> : onsky, deblur, dsct
+<scattering> : onsky, deblur, dsct, none
 <pipeline>   : kine, resolve, ehtim, doghit, ngmem
-```
-
----
-### 2. Define scattering in the data used for reconstructions
-
-```
-scat  = 'none'   # Options: onsky, deblur, dsct, none
 ```
 
 ---         
