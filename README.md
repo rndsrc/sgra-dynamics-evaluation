@@ -8,7 +8,8 @@
     - [ehtplot](https://github.com/liamedeiros/ehtplot)
 - Install Julia 1.10.4 with [juliaup](https://github.com/JuliaLang/juliaup)
 - You just need to modify `driver.py` and run it.
-- When running `driver.py` for the first time, uncomment the lines for `setup.jl`.
+
+## <span style="color:red"> NOTE: When running `driver.py` for the first time, uncomment the lines for `setup.jl` </span>
 
 
 # How to use the driver?
@@ -53,6 +54,6 @@ eval_VIDA             = True  # VIDA templates fits : total and dynamic componen
 eval_pattern_speed    = True  # Pattern speed for ring models
 ```
 
-### 5. Define the number of cores used by VIDA.jl
+### 4. Define the number of cores used by VIDA.jl
 
 ``` cores = 32 ```
