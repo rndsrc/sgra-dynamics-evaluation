@@ -156,6 +156,9 @@ for pol in pollist:
         imlistarr=[]
         for im in imlist_t:
             im.ivec=im.ivec/im.total_flux()
+            im.qvec=im.qvec/im.total_flux()
+            im.uvec=im.uvec/im.total_flux()
+            im.vvec=im.vvec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
         median = np.median(imlistarr,axis=0)
         for im in imlist_t:
