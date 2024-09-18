@@ -15,6 +15,8 @@ import argparse
 import os
 import glob
 from utilities import *
+plt.rcParams["xtick.direction"]="out"
+plt.rcParams["ytick.direction"]="out"
 colors, titles, labels, mfcs, mss = common()
 
 # Parsing arguments function
