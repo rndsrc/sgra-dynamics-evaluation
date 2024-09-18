@@ -15,8 +15,8 @@ Full path to the directory that contains:
 3) Reconstructions .hdf5 | <model>_<band>_<noise>_<scattering>_<pipeline>.hdf5 (e.g. mring+hsCCW_LO+HI_thermal+phase_onsky_resolve.hdf5)
 
 <model>      : crescent, disk, edisk, point, double, ring, 
-               mring+hsCCW, mring+hsCW, xmasring, mring+not-center-hs, mring+4static-hs,
-               SGRA, GRMHD
+               mring+hsCCW, mring+hsCW, mring+hs-incoh, mring+hs-cross, mring+hs-not-center, mring+hs-pol,
+               sgra, grmhd
          
 <band>       : LO, HI, LO+HI
 <noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat

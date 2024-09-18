@@ -127,8 +127,17 @@ for pol in pollist:
     s=0
     for p in polpaths.keys():
         mv=eh.movie.load_hdf5(polpaths[p])
+        imlist_o = [mv.get_image(t) for t in times]
         
-        imlist = [mv.get_image(t) for t in times]
+        # center the movie with repect to the truth movie frame 0
+        mvtruth_image=eh.movie.load_hdf5(polpaths['truth']).im_list()[0]
+        shifts = mvtruth_image.align_images(imlist_o)[1] #Shifts only from stokes I
+        mean_shift = [int(np.round(np.mean(np.array(shifts)[:, 1]), 0)), int(np.round(np.mean(np.array(shifts)[:, 1]),0))]
+        imlist=[]
+        for im in imlist_o:
+            im2 = im.shift(mean_shift) # Shifts all pol
+            imlist.append(im2)
+            
         imlistarr=[]
         for im in imlist:
             im.ivec=im.ivec/im.total_flux()
@@ -167,7 +176,7 @@ for pol in pollist:
 
         i=0
         for im in imlist:
-            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'])
+            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'], shift=False)
             nxcorr_t.append(nxcorr[0][0])
             nxcorr_tab.append(nxcorr[0][0])
             

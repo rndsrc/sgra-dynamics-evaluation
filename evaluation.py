@@ -74,7 +74,7 @@ def evaluation(subdir='./submissions/', scat='none', resultsdir='./results/', ev
         datap = subdir + dataf
         print(dataf)
 
-        if dataf.find('ring')!=-1 and dataf.find('mring')==-1 and dataf.find('xmasring')==-1:
+        if dataf.find('ring')!=-1 and dataf.find('mring')==-1:
             vida_modelname = 'ring'
             modeltype      = 'ring'
             hotspot        = False
@@ -94,27 +94,17 @@ def evaluation(subdir='./submissions/', scat='none', resultsdir='./results/', ev
             vida_modelname = 'point'
             modeltype      = 'non-ring'
             hotspot        = False
-        elif dataf.find('mring+hs')!=-1 and dataf.find('ring')!=-1 and dataf.find('mring')!=-1 and dataf.find('xmasring')==-1:
+        elif dataf.find('mring+hs')!=-1 and dataf.find('ring')!=-1 and dataf.find('mring')!=-1:
             hotspot        = True
             vida_modelname_dynamic = 'gaussian'
             vida_modelname = 'crescent'
             modeltype      = 'ring'
-        elif dataf.find('SGRA')!=-1 or dataf.find('sgra')!=-1:
+        elif dataf.find('SGRA')!=-1 or dataf.find('sgra')!=-1 or dataf.find('hops') != -1:
             hotspot=True
             vida_modelname_dynamic = 'gaussian'
             vida_modelname = 'crescent'
             modeltype      = 'ring'
-        elif dataf.find('mring+hs')==-1 and dataf.find('ring')!=-1 and dataf.find('xmasring')!=-1:
-            hotspot        = True
-            vida_modelname_dynamic = 'gaussian'
-            vida_modelname = 'crescent'
-            modeltype      = 'ring'
-        elif dataf.find('mring+not-center-hs')==-1 and dataf.find('mring+4static-hs')!=-1 and dataf.find('mring+hs')!=-1 and dataf.find('ring')!=-1 and dataf.find('xmasring')!=-1:
-            hotspot        = True
-            vida_modelname_dynamic = 'gaussian'
-            vida_modelname = 'crescent'
-            modeltype      = 'ring'
-        elif dataf.find('mring+4static-hs')==-1 and dataf.find('mring+not-center-hs')!=-1 and dataf.find('mring+hs')!=-1 and dataf.find('ring')!=-1 and dataf.find('xmasring')!=-1:
+        elif dataf.find('mring+hs')==-1 and dataf.find('ring')!=-1:
             hotspot        = True
             vida_modelname_dynamic = 'gaussian'
             vida_modelname = 'crescent'

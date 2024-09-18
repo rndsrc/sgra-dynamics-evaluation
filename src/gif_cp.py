@@ -93,10 +93,9 @@ for p in paths.keys():
     imlistI = []
     for t in u_times:
         im = mov.get_image(t)
-        if p=='truth':
-            if args.scat!='onsky':
-                im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
-        #else:
+        #if p=='truth':
+        #    if args.scat!='onsky':
+        #        im = im.blur_circ(fwhm_i=15*eh.RADPERUAS, fwhm_pol=15*eh.RADPERUAS).regrid_image(fov, npix)
         im = im.blur_circ(fwhm_i=blur).regrid_image(fov, npix)
         #im.ivec=im.ivec/im.total_flux()
         imlistI.append(im)
