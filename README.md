@@ -15,14 +15,14 @@
 
 ### 1. Define submission folder: `subdir`
 Full path to the directory that contains: 
-1) Truth .hdf5             | `<model>_<band>_<noise>_<scattering>_truth.uvfits` (e.g. mring+hsCCW_LO_thermal+phase_onsky_truth.hdf5)
-2) Data .uvfits     | `<model>_<band>_<noise>_<scattering>.uvfits` (e.g. mring+hsCCW_LO_thermal+phase_onsky.uvfits)
-3) Reconstructions .hdf5 | `<model>_<band>_<noise>_<scattering>_<pipeline>.hdf`5` (e.g. mring+hsCCW_LO+HI_thermal+phase_onsky_resolve.hdf5)
+1) Truth .hdf5             | `<model>_<band>_<noise>_<scattering>_truth.uvfits` (e.g. mring+hsCCW_LO_thermal+phase_none_truth.hdf5)
+2) Data .uvfits     | `<model>_<band>_<noise>_<scattering>.uvfits` (e.g. mring+hsCCW_LO_thermal+phase_none.uvfits)
+3) Reconstructions .hdf5 | `<model>_<band>_<noise>_<scattering>_<pipeline>.hdf`5` (e.g. mring+hsCCW_LO+HI_thermal+phase_none_resolve.hdf5)
 
 ```
 <model>      : crescent, disk, edisk, point, double, ring, 
                mring+hsCCW, mring+hsCW, mring+hs-incoh, mring+hs-cross, mring+hs-not-center, mring+hs-pol,
-               sgra, grmhd
+               sgra, grmhd1, grmhd2, grmhd3, grmhd2+hs
          
 <band>       : LO, HI, LO+HI
 <noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat
@@ -31,11 +31,11 @@ Full path to the directory that contains:
 ```
 
 ---         
-### 3. Define results folder: `resultsdir`
+### 2. Define results folder: `resultsdir`
 Full path to the directory that will contain all the results.
 
 ---
-### 4. Select the things to evaluate
+### 3. Select the things to evaluate
 
 ```
 eval_chisq            = True  # Chi-squares: I, Q, U, V | cphase, logcamp, amp
@@ -55,4 +55,4 @@ eval_pattern_speed    = True  # Pattern speed for ring models
 
 ### 5. Define the number of cores used by VIDA.jl
 
-``` cores = 100 ```
+``` cores = 32 ```
