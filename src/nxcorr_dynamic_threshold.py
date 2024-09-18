@@ -145,7 +145,7 @@ for pol in pollist:
         median = np.median(imlistarr,axis=0)
         for im in imlist:
             if pol=='I':
-                im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
+                im.ivec= np.clip(im.imarr(pol=pol)-median,0,999).flatten()
             elif pol=='Q':
                 im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='U':
@@ -165,7 +165,7 @@ for pol in pollist:
         median = np.median(imlistarr,axis=0)
         for im in imlist_t:
             if pol=='I':
-                im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
+                im.ivec= np.clip(im.imarr(pol=pol)-median,0,999).flatten()
             elif pol=='Q':
                 im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='U':
