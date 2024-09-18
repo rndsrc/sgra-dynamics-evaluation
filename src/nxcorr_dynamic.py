@@ -173,7 +173,7 @@ for pol in pollist:
 
         i=0
         for im in imlist:
-            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'], shift=False)
+            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'], shift=[0,0])
             nxcorr_t.append(nxcorr[0][0]+s)
             nxcorr_tab.append(nxcorr[0][0])
             i=i+1
