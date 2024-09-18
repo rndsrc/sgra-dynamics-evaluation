@@ -155,7 +155,7 @@ for pol in pollist:
         imlist_t =[mvt.get_image(t) for t in times]
         imlistarr=[]
         for im in imlist_t:
-            #im.ivec=im.ivec/im.total_flux()
+            im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
         median = np.median(imlistarr,axis=0)
         for im in imlist_t:
