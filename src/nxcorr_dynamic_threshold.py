@@ -94,7 +94,7 @@ mvt_list2=[]
 for im in mvt_list:
     im = im.regrid_image(fov, npix)
     mvt_list2.append(im)
-mvt=mvt_list2.merge_im_list()
+mvt=eh.movie.merge_im_list(mvt_list2)
 
 mv_nxcorr={}
 for p in paths.keys():
@@ -143,7 +143,7 @@ for pol in pollist:
         for im in mv_list:
             im = im.regrid_image(fov, npix)
             mv_list2.append(im)
-        mv=mv_list2.merge_im_list()
+        mv=eh.movie.merge_im_list(mv_list2)
 
         imlist_o = [mv.get_image(t) for t in times]
         
