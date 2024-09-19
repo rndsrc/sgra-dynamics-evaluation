@@ -42,6 +42,9 @@ args = create_parser().parse_args()
 pathmovt  = args.truthmv
 outpath = args.outpath
 
+npix   = 128
+fov    = 120 * eh.RADPERUAS
+
 paths={}
 if args.kinemv!='none':
     paths['kine']=args.kinemv
@@ -84,6 +87,13 @@ mvt=eh.movie.load_hdf5(pathmovt)
 if args.scat!='onsky':
     mvt=mvt.blur_circ(fwhm_x=15*eh.RADPERUAS, fwhm_x_pol=15*eh.RADPERUAS, fwhm_t=0)
 
+mvt_list= mvt.im_list()
+mvt_list2=[]
+for im in mvt_list:
+    im = im.regrid_image(fov, npix)
+    mvt_list2.append(im)
+mvt=mvt_list2.merge_im_list()
+
 mv_nxcorr={}
 for p in paths.keys():
     mv_nxcorr[p]=np.zeros(4)
@@ -125,17 +135,23 @@ for pol in pollist:
     s=0
     for p in polpaths.keys():
         mv=eh.movie.load_hdf5(polpaths[p])
-        #imlist_o = [mv.get_image(t) for t in times]
-        imlist = [mv.get_image(t) for t in times]
+        
+        mv_list= mv.im_list()
+        mv_list2=[]
+        for im in mv_list:
+            im = im.regrid_image(fov, npix)
+            mv_list2.append(im)
+        mv=mv_list2.merge_im_list()
+
+        imlist_o = [mv.get_image(t) for t in times]
         
         # center the movie with repect to the truth movie frame 0
-        #mvtruth_image=eh.movie.load_hdf5(pathmovt).im_list()[0]
-        #shifts = mvtruth_image.align_images(imlist_o)[1] #Shifts only from stokes I
-        #mean_shift = [int(np.round(np.mean(np.array(shifts)[:, 1]), 0)), int(np.round(np.mean(np.array(shifts)[:, 1]),0))]
-        #imlist=[]
-        #for im in imlist_o:
-        #    im2 = im.shift(mean_shift) # Shifts all pol
-        #    imlist.append(im2)
+        mvtruth_image=eh.movie.load_hdf5(pathmovt).avg_frame()
+        shift = mvtruth_image.align_images(mv.avg_frame())[1] #Shifts only from stokes I
+        imlist=[]
+        for im in imlist_o:
+            im2 = im.shift(shift[0]) # Shifts all pol
+            imlist.append(im2)
             
         imlistarr=[]
         for im in imlist:
