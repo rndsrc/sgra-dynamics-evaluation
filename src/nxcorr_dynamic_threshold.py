@@ -149,7 +149,7 @@ for pol in pollist:
         
         # center the movie with repect to the truth movie frame 0
         mvtruth_image=eh.movie.load_hdf5(pathmovt).avg_frame()
-        shift = mvtruth_image.align_images(mv.avg_frame())[1] #Shifts only from stokes I
+        shift = mvtruth_image.align_images([mv.avg_frame()])[1] #Shifts only from stokes I
         imlist=[]
         for im in imlist_o:
             im2 = im.shift(shift[0]) # Shifts all pol
