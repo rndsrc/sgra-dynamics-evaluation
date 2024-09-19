@@ -94,6 +94,8 @@ for p in paths.keys():
         if p=='truth':
             if args.scat!='onsky':
                 os.system(f'julia -p {cores} {codedir}/src/movie_extractor_parallel.jl --input {input} --output {output} --template {template} --stride {cores} --blur 15.0')
+            else:
+                os.system(f'julia -p {cores} {codedir}/src/movie_extractor_parallel.jl --input {input} --output {output} --template {template} --stride {cores}')
         else:
             os.system(f'julia -p {cores} {codedir}/src/movie_extractor_parallel.jl --input {input} --output {output} --template {template} --stride {cores}')
         

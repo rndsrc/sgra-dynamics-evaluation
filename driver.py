@@ -29,9 +29,9 @@ Full path to the directory that will contain all the results.
 """
 
 # Submission Directory
-subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/mexico/submissions_test/'
+subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/validation_ladder/16Sept2024/submissions/'
 # Results Directory
-resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/mexico/results_test/'
+resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/validation_ladder/16Sept2024/results/'
         
 
 eval_chisq            = True  # Chi-squares: I, Q, U, V | cphase, logcamp, amp
@@ -49,7 +49,7 @@ eval_VIDA             = True  # VIDA templates fits : total and dynamic componen
 eval_pattern_speed    = True  # Pattern speed for ring models
 
 # Physical CPU cores to be used
-cores = 32
+cores = 100
 
 # Only when running for the first time
 #setupdir=os.getcwd()+'/src'

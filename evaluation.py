@@ -36,43 +36,49 @@ def evaluation(subdir='./submissions/', resultsdir='./results/', eval_chisq=True
         if d.find('HI')==-1:
             datalist.append(d)
 
-    # Sort reconstructions by pipeline
-    movielist = sorted(glob.glob(subdir+'*.hdf5'))
-    resolve=[]
-    kine=[]
-    ehtim=[]
-    doghit=[]
-    ngmem=[]
-    truth=[]
-
-    for m in movielist:
-        n = os.path.basename(m)
-        if n.find('resolve')!=-1:
-            resolve.append(m)
-        elif n.find('kine')!=-1:
-            kine.append(m)
-        elif n.find('ngmem')!=-1:
-            ngmem.append(m)
-        elif n.find('doghit')!=-1:
-            doghit.append(m)
-        elif n.find('ehtim')!=-1:
-            ehtim.append(m)
-        elif n.find('truth')!=-1 and m.find('HI')==-1:
-            truth.append(m)
-
-    movies={
-            'truth'  : truth,
-            'kine'   : kine,
-            'resolve': resolve,
-            'doghit' : doghit,
-            'ngmem'  : ngmem,
-            'ehtim'  : ehtim
-    }
-
     for d in datalist:
         dataf = os.path.basename(d)
         datap = subdir + dataf
-        print(dataf)
+        #print(dataf)
+        
+        model = dataf.split('_')[0]
+        band =  dataf.split('_')[1]
+        noise = dataf.split('_')[2]
+        scat = dataf.split('_')[3][:-7]
+        
+        # Sort reconstructions by pipeline
+        movielist = sorted(glob.glob(subdir+f'{model}_{band}_{noise}_{scat}_*.hdf5'))
+        resolve=[]
+        kine=[]
+        ehtim=[]
+        doghit=[]
+        ngmem=[]
+        truth=[]
+
+        for m in movielist:
+            n = os.path.basename(m)
+            if n.find('resolve')!=-1:
+                resolve.append(m)
+            elif n.find('kine')!=-1:
+                kine.append(m)
+            elif n.find('ngmem')!=-1:
+                ngmem.append(m)
+            elif n.find('doghit')!=-1:
+                doghit.append(m)
+            elif n.find('ehtim')!=-1:
+                ehtim.append(m)
+            elif n.find('truth')!=-1 and m.find('HI')==-1:
+                truth.append(m)
+
+        movies={
+                'truth'  : truth,
+                'kine'   : kine,
+                'resolve': resolve,
+                'doghit' : doghit,
+                'ngmem'  : ngmem,
+                'ehtim'  : ehtim
+        }
+
 
         if dataf.find('ring')!=-1 and dataf.find('mring')==-1:
             vida_modelname = 'ring'
@@ -127,11 +133,8 @@ def evaluation(subdir='./submissions/', resultsdir='./results/', eval_chisq=True
             mvsort[p] = dict()
             for movie in movie_types:
                 movief = os.path.basename(movie)
-                model = movief.split('_')[0]
-                band =  movief.split('_')[1]
-                noise = movief.split('_')[2]
-                scat = movief.split('_')[3]
                 moviep = subdir + movief
+                model = movief.split('_')[0]
                 if movief.find(model)!=-1:
                     mvsort[p][model] = moviep   
 
