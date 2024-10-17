@@ -171,49 +171,50 @@ for p in paths.keys():
     ang_betalp_2_dict[p] = ang_betalp_2
     ang_betacp_1_dict[p] = ang_betacp_1
 
-score={}
-for p in paths.keys():
-    if p!='truth':
-        score[p]=np.zeros(4)
-
-row_labels = ['$|m|_{net}$', '$ \\langle |m| \\rangle$', '$ \\angle \\beta_{LP,2}$', '$ \\angle \\beta_{CP,1}$']
-table_vals = pd.DataFrame(data=score, index=row_labels)
- 
-for p in paths.keys():
-    if p!='truth':
-        if np.sum(m_net_dict[p])!=0:
-            signal1 = m_net_dict['truth']
-            signal2 = m_net_dict[p]
-            table_vals[p][row_labels[0]] = normalized_rmse(signal1, signal2, w_norm['I'])
-
-            signal1 = m_avg_dict['truth']
-            signal2 = m_avg_dict[p]
-            table_vals[p][row_labels[1]] = normalized_rmse(signal1, signal2, w_norm['I'])
-
-            signal1 = ang_betalp_2_dict['truth']
-            signal2 = ang_betalp_2_dict[p]
-            table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
-
-            signal1 = ang_betacp_1_dict['truth']
-            signal2 = ang_betacp_1_dict[p]
-            table_vals[p][row_labels[3]] = normalized_rmse(signal1, signal2, w_norm['I'])
-
-
-table_vals.replace(0.00, '-', inplace=True)
-
-table = ax[0,1].table(cellText=table_vals.values,
-                    rowLabels=table_vals.index,
-                    colLabels=table_vals.columns,
-                    cellLoc='center',
-                    loc='bottom',
-                    bbox=[-0.1, -2.2, 3.5, 0.7])
-table.auto_set_font_size(False)
-table.set_fontsize(18)
-for c in table.get_children():
-    c.set_edgecolor('none')
-    c.set_text_props(color='black')
-    c.set_facecolor('none')
-    c.set_edgecolor('black')
+if args.truthmv!='none':
+    score={}
+    for p in paths.keys():
+        if p!='truth':
+            score[p]=np.zeros(4)
+    
+    row_labels = ['$|m|_{net}$', '$ \\langle |m| \\rangle$', '$ \\angle \\beta_{LP,2}$', '$ \\angle \\beta_{CP,1}$']
+    table_vals = pd.DataFrame(data=score, index=row_labels)
+    
+    for p in paths.keys():
+        if p!='truth':
+            if np.sum(m_net_dict[p])!=0:
+                signal1 = m_net_dict['truth']
+                signal2 = m_net_dict[p]
+                table_vals[p][row_labels[0]] = normalized_rmse(signal1, signal2, w_norm['I'])
+    
+                signal1 = m_avg_dict['truth']
+                signal2 = m_avg_dict[p]
+                table_vals[p][row_labels[1]] = normalized_rmse(signal1, signal2, w_norm['I'])
+    
+                signal1 = ang_betalp_2_dict['truth']
+                signal2 = ang_betalp_2_dict[p]
+                table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
+    
+                signal1 = ang_betacp_1_dict['truth']
+                signal2 = ang_betacp_1_dict[p]
+                table_vals[p][row_labels[3]] = normalized_rmse(signal1, signal2, w_norm['I'])
+    
+    
+    table_vals.replace(0.00, '-', inplace=True)
+    
+    table = ax[0,1].table(cellText=table_vals.values,
+                        rowLabels=table_vals.index,
+                        colLabels=table_vals.columns,
+                        cellLoc='center',
+                        loc='bottom',
+                        bbox=[-0.1, -2.2, 3.5, 0.7])
+    table.auto_set_font_size(False)
+    table.set_fontsize(18)
+    for c in table.get_children():
+        c.set_edgecolor('none')
+        c.set_text_props(color='black')
+        c.set_facecolor('none')
+        c.set_edgecolor('black')
     
 ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(5.25, 1.35), markerscale=2)
 plt.savefig(outpath, bbox_inches='tight', dpi=300)

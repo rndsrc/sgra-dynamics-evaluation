@@ -167,40 +167,41 @@ if model=='crescent':
         dw_dict[p]=np.array(d/(1-(1/(4*np.log(2)))*(w0/d)**2))
         n_dict[p]=n
         a_dict[p]=a
-        
-    score={}
-    for p in paths.keys():
-        if p!='truth':
-            score[p]=np.zeros(3)
-    row_labels = ['$d(w)$', 'PA', '$A$']
-    table_vals = pd.DataFrame(data=score, index=row_labels)
-    for p in paths.keys():
-        if p!='truth':
-            signal1 = dw_dict['truth']
-            signal2 = dw_dict[p]
-            table_vals[p][row_labels[0]] = normalized_rmse(signal1, signal2, w_norm['I'])
-            signal1 = n_dict['truth']
-            signal2 = n_dict[p]
-            table_vals[p][row_labels[1]] = normalized_rmse(signal1, signal2, w_norm['I'])
-            signal1 = a_dict['truth']
-            signal2 = a_dict[p]
-            table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
-
-    table_vals.replace(0.00, '-', inplace=True)
-
-    table = ax[0,0].table(cellText=table_vals.values,
-                        rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
-                        cellLoc='center',
-                        loc='bottom',
-                        bbox=[0.35, -2.3, 1.5, 0.7])
-    table.auto_set_font_size(False)
-    table.set_fontsize(18)
-    for c in table.get_children():
-        c.set_edgecolor('none')
-        c.set_text_props(color='black')
-        c.set_facecolor('none')
-        c.set_edgecolor('black')
+    
+    if args.truthmv!='none':  
+        score={}
+        for p in paths.keys():
+            if p!='truth':
+                score[p]=np.zeros(3)
+        row_labels = ['$d(w)$', 'PA', '$A$']
+        table_vals = pd.DataFrame(data=score, index=row_labels)
+        for p in paths.keys():
+            if p!='truth':
+                signal1 = dw_dict['truth']
+                signal2 = dw_dict[p]
+                table_vals[p][row_labels[0]] = normalized_rmse(signal1, signal2, w_norm['I'])
+                signal1 = n_dict['truth']
+                signal2 = n_dict[p]
+                table_vals[p][row_labels[1]] = normalized_rmse(signal1, signal2, w_norm['I'])
+                signal1 = a_dict['truth']
+                signal2 = a_dict[p]
+                table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
+    
+        table_vals.replace(0.00, '-', inplace=True)
+    
+        table = ax[0,0].table(cellText=table_vals.values,
+                            rowLabels=table_vals.index,
+                            colLabels=table_vals.columns,
+                            cellLoc='center',
+                            loc='bottom',
+                            bbox=[0.35, -2.3, 1.5, 0.7])
+        table.auto_set_font_size(False)
+        table.set_fontsize(18)
+        for c in table.get_children():
+            c.set_edgecolor('none')
+            c.set_text_props(color='black')
+            c.set_facecolor('none')
+            c.set_edgecolor('black')
     ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
 
 elif model=='ring':
