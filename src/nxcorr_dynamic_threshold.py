@@ -41,8 +41,8 @@ args = create_parser().parse_args()
 pathmovt  = args.truthmv
 outpath = args.outpath
 
-npix   = 128
-fov    = 120 * eh.RADPERUAS
+npix   = 200
+fov    = 200 * eh.RADPERUAS
 
 paths={}
 if args.kinemv!='none':

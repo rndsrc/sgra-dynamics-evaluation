@@ -85,14 +85,17 @@ for p in polpaths.keys():
     new_movie.reset_interp(bounds_error=False)
     
     mv_chi[p]=[]
-    mv_chicp=obs.chisq(new_movie, dtype='cphase', pol=pol, ttype='fast')
+    mv_chicp=obs.chisq(new_movie, dtype='cphase', pol=pol, ttype='direct', cp_uv_min=1e8)
     
     mv_chicp=np.round(mv_chicp,2)
     mv_chi[p].append(mv_chicp)
-    mv_chilca=obs.chisq(new_movie, dtype='logcamp', pol=pol, ttype='fast')
+    if pol=='I':
+        mv_chilca=obs.chisq(new_movie, dtype='logcamp', pol=pol, ttype='direct', cp_uv_min=1e8, snrcut=1.0)
+    else:
+        mv_chilca=obs.chisq(new_movie, dtype='logcamp', pol=pol, ttype='direct', cp_uv_min=1e8)
     mv_chilca=np.round(mv_chilca,2)
     mv_chi[p].append(mv_chilca)
-    mv_chia=obs.chisq(new_movie, dtype='amp', pol=pol, ttype='fast')
+    mv_chia=obs.chisq(new_movie, dtype='amp', pol=pol, ttype='direct')
     mv_chia=np.round(mv_chia,2)
     mv_chi[p].append(mv_chia)
 
@@ -102,9 +105,12 @@ for p in polpaths.keys():
     
     i=0
     for im in imlist:
-        chicp=obslist_t[i].chisq(im, dtype='cphase', pol=pol, ttype='nfft', cp_uv_min=1e8)
-        chilca=obslist_t[i].chisq(im, dtype='logcamp', pol=pol, ttype='nfft',cp_uv_min=1e8, snrcut=1.0)
-        chia=obslist_t[i].chisq(im, dtype='amp', pol=pol, ttype='nfft')
+        chicp=obslist_t[i].chisq(im, dtype='cphase', pol=pol, ttype='direct', cp_uv_min=1e8)
+        if pol=='I':
+            chilca=obslist_t[i].chisq(im, dtype='logcamp', pol=pol, ttype='direct',cp_uv_min=1e8, snrcut=1.0)
+        else:
+            chilca=obslist_t[i].chisq(im, dtype='logcamp', pol=pol, ttype='direct',cp_uv_min=1e8)
+        chia=obslist_t[i].chisq(im, dtype='amp', pol=pol, ttype='direct')
                 
         chicp_t.append(chicp*j)
         chilca_t.append(chilca*j)
