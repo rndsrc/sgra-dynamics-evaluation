@@ -29,9 +29,9 @@ Full path to the directory that will contain all the results.
 """
 
 # Submission Directory
-subdir='./submissions/'
+subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/evaluation_metrics/mring+hsCW/submissions/'
 # Results Directory
-resultsdir='./results/'
+resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/evaluation_metrics/mring+hsCW/results/'
         
 
 eval_chisq            = True  # Chi-squares: I, Q, U, V | cphase, logcamp, amp
@@ -39,7 +39,7 @@ eval_closure_phases   = True  # Fits to closures triangles: I, Q, U, V
                               # [('AZ', 'LM', 'SM'), ('AA', 'AZ', 'SM'), ('AA', 'LM', 'SM')]
 eval_amplitudes       = True      # Fits to amplitudes: I, Q, U, V
                               # [('AZ', 'LM'), ('AA', 'AZ'), ('LM', 'SM')]                          
-plot_gifs             = False  # Plot Stokes I, Stokes P, Stokes V Gif: Total, Dynamic, Static
+plot_gifs             = True  # Plot Stokes I, Stokes P, Stokes V Gif: Total, Dynamic, Static
 eval_nxcorr           = True  # NXCORR: Total, Static, Dynamic, NXCORR Thresholds
 plot_mbreve           = True  # Plot mbreve
 plot_vis_var          = True  # Plot visibility variance of truth and resconstructions
@@ -49,7 +49,7 @@ eval_VIDA             = True  # VIDA templates fits : total and dynamic componen
 eval_pattern_speed    = True  # Pattern speed for ring models
 
 # Physical CPU cores to be used
-cores = 100
+cores = 8
 
 # Only when running for the first time
 #setupdir=os.getcwd()+'/src'

@@ -103,7 +103,7 @@ for p in polpaths.keys():
     i=0
     for im in imlist:
         chicp=obslist_t[i].chisq(im, dtype='cphase', pol=pol, ttype='nfft', cp_uv_min=1e8)
-        chilca=obslist_t[i].chisq(im, dtype='logcamp', pol=pol, ttype='nfft',cp_uv_min=1e8)
+        chilca=obslist_t[i].chisq(im, dtype='logcamp', pol=pol, ttype='nfft',cp_uv_min=1e8, snrcut=1.0)
         chia=obslist_t[i].chisq(im, dtype='amp', pol=pol, ttype='nfft')
                 
         chicp_t.append(chicp*j)
