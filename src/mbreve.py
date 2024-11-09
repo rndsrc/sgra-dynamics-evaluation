@@ -58,26 +58,9 @@ if args.kinemv!='none':
     paths['kine']=args.kinemv
 ######################################################################
 
-# Time average data to 60s
-obs = eh.obsdata.load_uvfits(args.data, polrep='circ')
+obs = eh.obsdata.load_uvfits(args.data)
 obs.add_scans()
-
-if args.scat=='dsct':
-    # Refractive Scattering
-    obs = obs.switch_polrep(polrep_out ='stokes')
-    obs = add_noisefloor_obs(obs, optype="quarter1", scale=1.0)
-    # Diffractive Scattering
-    sm = so.ScatteringModel()
-    obs = sm.Deblur_obs(obs)
-    obs = obs.switch_polrep(polrep_out ='circ')
-
-obs = obs.avg_coherent(60.0)
-obs = obs.add_fractional_noise(0.01)
-
 amp = pd.DataFrame(obs.data)
-
-obs = obs.switch_polrep(polrep_out ='stokes')
-obs.add_scans()
 times = []
 for t in obs.scans:
     times.append(t[0])

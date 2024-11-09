@@ -69,8 +69,8 @@ obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
 
 ######################################################################
 # Set parameters
-npix   = 128
-fov    = 120 * eh.RADPERUAS
+npix   = 160
+fov    = 160 * eh.RADPERUAS
 blur   = 0 * eh.RADPERUAS
 ######################################################################
 

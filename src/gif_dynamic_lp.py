@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 12 July 2024
+# Author: Rohan Dahale, Date: 09 November 2024
 ######################################################################
 
 import ehtim as eh
@@ -68,8 +68,8 @@ obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
     
 ######################################################################
 # Set parameters
-npix   = 128
-fov    = 120 * eh.RADPERUAS
+npix   = 160
+fov    = 160 * eh.RADPERUAS
 blur   = 0 * eh.RADPERUAS
 ######################################################################
 
@@ -87,11 +87,11 @@ for i in range(len(times)-1):
         j=0
         while u_times[len(u_times)-1] < times[i+1]-mean_dt:
             u_times.append(times[i]+j*mean_dt)
-            cmapsl.append('binary')
+            cmapsl.append('bwr')
             j=j+1
     else:
         u_times.append(times[i])
-        cmapsl.append('binary')
+        cmapsl.append('bwr')
 
 ######################################################################
 
@@ -161,7 +161,7 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
 
     # Set colorbar limits
     TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, 0 #min(movieIs['kine'][0].ivec)*TBfactor
+    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, -max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor #min(movieIs['kine'][0].ivec)*TBfactor
     
     polmovies={}
     for i, p in enumerate(movieIs.keys()):    
@@ -224,12 +224,12 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
                                headwidth = 1,
                                pivot='mid',
                                width=0.01,
-                               cmap='rainbow',
+                               cmap='gnuplot',
                                norm=cnorm,
                                scale=16)
         if f==0:
             ax1 = fig.add_axes([linear_interpolation(num_subplots, 2, 0.82, 7, 0.92), linear_interpolation(num_subplots, 2, 0.025, 7, 0.1), linear_interpolation(num_subplots, 2, 0.035, 7, 0.01), linear_interpolation(num_subplots, 2, 0.765, 7, 0.6)] , anchor = 'E') 
-            cbar = fig.colorbar(tickplot, cmap='rainbow', cax=ax1, pad=0.14,fraction=0.038, orientation="vertical", ticklocation='right') 
+            cbar = fig.colorbar(tickplot, cmap='gnuplot', cax=ax1, pad=0.14,fraction=0.038, orientation="vertical", ticklocation='right') 
             cbar.set_label('$|m|$') 
         
         plt.suptitle(f"{u_times[f]:.2f} UT", y=0.95, fontsize=22)

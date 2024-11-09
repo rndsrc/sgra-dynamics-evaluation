@@ -157,12 +157,13 @@ for pol in pollist:
             
         imlistarr=[]
         for im in imlist:
-            im.ivec=im.ivec/im.total_flux()
+            #im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
         median = np.median(imlistarr,axis=0)
         for im in imlist:
             if pol=='I':
-                im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
+                #im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
+                im.ivec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='Q':
                 im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='U':
@@ -174,7 +175,7 @@ for pol in pollist:
         imlist_t =[mvt.get_image(t) for t in times]
         imlistarr=[]
         for im in imlist_t:
-            im.ivec=im.ivec/im.total_flux()
+            #im.ivec=im.ivec/im.total_flux()
             #im.qvec=im.qvec/im.total_flux()
             #im.uvec=im.uvec/im.total_flux()
             #im.vvec=im.vvec/im.total_flux()
@@ -182,7 +183,8 @@ for pol in pollist:
         median = np.median(imlistarr,axis=0)
         for im in imlist_t:
             if pol=='I':
-                im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
+                #im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
+                im.ivec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='Q':
                 im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='U':

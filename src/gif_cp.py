@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 12 July 2024
+# Author: Rohan Dahale, Date: 09 November 2024
 ######################################################################
 
 import ehtim as eh
@@ -62,8 +62,8 @@ obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
 
 ######################################################################
 # Set parameters
-npix   = 128
-fov    = 120 * eh.RADPERUAS
+npix   = 160
+fov    = 160 * eh.RADPERUAS
 blur   = 0 * eh.RADPERUAS
 
 ######################################################################

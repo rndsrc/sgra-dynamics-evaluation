@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 12 July 2024
+# Author: Rohan Dahale, Date: 09 November 2024
 ######################################################################
 
 import ehtim as eh
@@ -67,8 +67,8 @@ obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
     
 ######################################################################
 # Set parameters
-npix   = 128
-fov    = 120 * eh.RADPERUAS
+npix   = 160
+fov    = 160 * eh.RADPERUAS
 blur   = 0 * eh.RADPERUAS
 ######################################################################
 
@@ -111,7 +111,7 @@ for p in paths.keys():
         
     median = np.median(imlistarr,axis=0)
     for im in imlistI:
-        im.ivec= np.clip(im.imarr(pol='I')-median,0,1).flatten()
+        im.ivec= np.array(im.imarr(pol='I')-median).flatten()
         
     imlistIs[p] =imlistI
     #med = np.median(imlistIs[p],axis=0)
@@ -136,7 +136,7 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
 
     # Set colorbar limits
     TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
+    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, -max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
 
     def plot_frame(f):
         for i, p in enumerate(movieIs.keys()):

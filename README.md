@@ -6,7 +6,7 @@
     - `pynfft`
     - `ffmpeg`
     - [ehtplot](https://github.com/liamedeiros/ehtplot)
-- Install Julia 1.10.4 with [juliaup](https://github.com/JuliaLang/juliaup)
+- Install Julia 1.10.4 with [juliaup](https://github.com/JuliaLang/juliaup). `juliaup add 1.10.4`, `juliaup default 1.10.4`
 - You just need to modify `driver.py` and run it.
 
 ## <span style="color:red"> NOTE: When running `driver.py` for the first time, uncomment the lines for `setup.jl` </span>
@@ -16,9 +16,9 @@
 
 ### 1. Define submission folder: `subdir`
 Full path to the directory that contains: 
-1) Truth .hdf5             | `<model>_<band>_<noise>_<scattering>_truth.uvfits` (e.g. mring+hsCCW_LO_thermal+phase_none_truth.hdf5)
-2) Data .uvfits     | `<model>_<band>_<noise>_<scattering>.uvfits` (e.g. mring+hsCCW_LO_thermal+phase_none.uvfits)
-3) Reconstructions .hdf5 | `<model>_<band>_<noise>_<scattering>_<pipeline>.hdf`5` (e.g. mring+hsCCW_LO+HI_thermal+phase_none_resolve.hdf5)
+1) Truth .hdf5             | `<model>_<band>_<scattering>_truth.uvfits` (e.g. mring+hsCCW_LO_onsky_truth.hdf5)
+2) Data .uvfits     | `<model>_<band>_<scattering>.uvfits` (e.g. mring+hsCCW_LO_onsky.uvfits)
+3) Reconstructions .hdf5 | `<model>_<band>_<scattering>_<pipeline>.hdf`5` (e.g. mring+hsCCW_LO+HI_onsky_resolve.hdf5)
 
 ```
 <model>      : crescent, disk, edisk, point, double, ring, 
@@ -26,7 +26,6 @@ Full path to the directory that contains:
                sgra, grmhd1, grmhd2, grmhd3, grmhd2+hs
          
 <band>       : LO, HI, LO+HI
-<noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat
 <scattering> : onsky, deblur, dsct, none
 <pipeline>   : kine, resolve, ehtim, doghit, ngmem
 ```

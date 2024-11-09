@@ -1,5 +1,5 @@
 ##############################################################################################
-# Author: Rohan Dahale, Date: 17 September 2024, Version=v1.1
+# Author: Rohan Dahale, Date: 09 November 2024, Version=v1.2
 ##############################################################################################
 import os
 import glob
@@ -10,16 +10,15 @@ import evaluation as ev
 # `subdir`:
 
 Full path to the directory that contains: 
-1) Truth .hdf5             | <model>_<band>_<noise>_<scattering>_truth.uvfits (e.g. mring+hsCCW_LO_thermal+phase_onsky_truth.hdf5)
-2) Data .uvfits     | <model>_<band>_<noise>_<scattering>.uvfits (e.g. mring+hsCCW_LO_thermal+phase_onsky.uvfits)
-3) Reconstructions .hdf5 | <model>_<band>_<noise>_<scattering>_<pipeline>.hdf5 (e.g. mring+hsCCW_LO+HI_thermal+phase_onsky_resolve.hdf5)
+1) Truth .hdf5             | <model>_<band>_<scattering>_truth.uvfits (e.g. mring+hsCCW_LO_truth.hdf5)
+2) Data .uvfits     | <model>_<band>_<scattering>.uvfits (e.g. mring+hsCCW_LO_onsky.uvfits)
+3) Reconstructions .hdf5 | <model>_<band>_<scattering>_<pipeline>.hdf5 (e.g. mring+hsCCW_LO+H_onsky_resolve.hdf5)
 
 <model>      : crescent, disk, edisk, point, double, ring, 
                mring+hsCCW, mring+hsCW, mring+hs-incoh, mring+hs-cross, mring+hs-not-center, mring+hs-pol,
                sgra, grmhd
          
 <band>       : LO, HI, LO+HI
-<noise>      : thermal+phase, thermal+phase+amp, thermal+phase+scat, thermal+phase+amp+scat
 <scattering> : onsky, deblur, dsct, none
 <pipeline>   : kine, resolve, ehtim, doghit, ngmem
          
@@ -29,9 +28,9 @@ Full path to the directory that will contain all the results.
 """
 
 # Submission Directory
-subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/evaluation_metrics/mring+hsCW/submissions/'
+subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/DAR_09Nov2024/submissions/'
 # Results Directory
-resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/evaluation_metrics/mring+hsCW/results/'
+resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/DAR_09Nov2024/results/'
         
 
 eval_chisq            = True  # Chi-squares: I, Q, U, V | cphase, logcamp, amp
@@ -43,13 +42,13 @@ plot_gifs             = True  # Plot Stokes I, Stokes P, Stokes V Gif: Total, Dy
 eval_nxcorr           = True  # NXCORR: Total, Static, Dynamic, NXCORR Thresholds
 plot_mbreve           = True  # Plot mbreve
 plot_vis_var          = True  # Plot visibility variance of truth and resconstructions
-eval_rex              = False  # Ring characterization with REx in total intensity and polarization
+eval_rex              = True  # Ring characterization with REx in total intensity and polarization
 eval_VIDA_pol         = True  # Ring characterization with VIDA in polarization
 eval_VIDA             = True  # VIDA templates fits : total and dynamic component
 eval_pattern_speed    = True  # Pattern speed for ring models
 
 # Physical CPU cores to be used
-cores = 8
+cores = 64
 
 # Only when running for the first time
 #setupdir=os.getcwd()+'/src'
