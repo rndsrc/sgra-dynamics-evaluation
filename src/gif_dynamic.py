@@ -86,11 +86,11 @@ for i in range(len(times)-1):
         j=0
         while u_times[len(u_times)-1] < times[i+1]-mean_dt:
             u_times.append(times[i]+j*mean_dt)
-            cmapsl.append('binary_us')
+            cmapsl.append('binary_usr')
             j=j+1
     else:
         u_times.append(times[i])
-        cmapsl.append('binary_us')
+        cmapsl.append('afmhot_us')
 
 ######################################################################
 
