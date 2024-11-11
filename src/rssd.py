@@ -65,10 +65,10 @@ obs, obs_t, obslist_t, splitObs, times, I, snr, w_norm = process_obs_weights(obs
 
 fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(28,8), sharex=True)
 
-ax[0].set_ylabel('nxcorr (I)')
-ax[1].set_ylabel('nxcorr (Q)')
-ax[2].set_ylabel('nxcorr (U)')
-ax[3].set_ylabel('nxcorr (V)')
+ax[0].set_ylabel('rssd (I)')
+ax[1].set_ylabel('rssd (Q)')
+ax[2].set_ylabel('rssd (U)')
+ax[3].set_ylabel('rssd (V)')
 
 ax[0].set_xlabel('Time (UTC)')
 ax[1].set_xlabel('Time (UTC)')
@@ -150,12 +150,12 @@ for pol in pollist:
 
         i=0
         for im in imlist:
-            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'])
-            nxcorr_t.append(nxcorr[0][0]+s)
-            nxcorr_tab.append(nxcorr[0][0])
+            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['rssd'])
+            nxcorr_t.append(np.exp(-nxcorr[0][0]/im.psize)+s)
+            nxcorr_tab.append(np.exp(-nxcorr[0][0]/im.psize))
             i=i+1
         
-        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),3)
+        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),4)
                     
         mc=colors[p]
         alpha = 0.5
@@ -172,10 +172,10 @@ for pol in pollist:
     
     k=k+1
     
-table_vals.rename(index={'I':'nxcorr (I)'},inplace=True)
-table_vals.rename(index={'Q':'nxcorr (Q)'},inplace=True)
-table_vals.rename(index={'U':'nxcorr (U)'},inplace=True)
-table_vals.rename(index={'V':'nxcorr (V)'},inplace=True)
+table_vals.rename(index={'I':'rssd (I)'},inplace=True)
+table_vals.rename(index={'Q':'rssd (Q)'},inplace=True)
+table_vals.rename(index={'U':'rssd (U)'},inplace=True)
+table_vals.rename(index={'V':'rssd (V)'},inplace=True)
 table_vals.replace(0.000, '-', inplace=True)
 
 table = ax[1].table(cellText=table_vals.values,

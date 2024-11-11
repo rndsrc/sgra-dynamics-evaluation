@@ -67,7 +67,7 @@ if args.ngmv!='none':
 ######################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
-obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(obs, args, paths)
+obs, obs_t, obslist_t, splitObs, times, I, snr, w_norm = process_obs_weights(obs, args, paths)
 
 ######################################################################
 

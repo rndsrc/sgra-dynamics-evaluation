@@ -86,10 +86,15 @@ for p in paths.keys():
             imlistUarr.append(im.imarr(pol='U'))
             imlistVarr.append(im.imarr(pol='V'))
             
-        medianI = np.median(imlistIarr,axis=0)
-        medianQ = np.median(imlistQarr,axis=0)
-        medianU = np.median(imlistUarr,axis=0)
-        medianV = np.median(imlistVarr,axis=0)
+        #medianI = np.median(imlistIarr,axis=0)
+        #medianQ = np.median(imlistQarr,axis=0)
+        #medianU = np.median(imlistUarr,axis=0)
+        #medianV = np.median(imlistVarr,axis=0)
+        
+        medianI = np.min(imlistIarr,axis=0)
+        medianQ = np.min(imlistQarr,axis=0)
+        medianU = np.min(imlistUarr,axis=0)
+        medianV = np.min(imlistVarr,axis=0)
         
         if len(imlist[0].ivec)!=0: 
             imlist[0].ivec = medianI.flatten()

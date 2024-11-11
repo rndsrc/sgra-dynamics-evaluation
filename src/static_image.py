@@ -111,7 +111,7 @@ def static(Is, titles, paths, outpath='./', fov=None, interp='gaussian'):
     ax1 = fig.add_axes([linear_interpolation(num_subplots, 2, 0.82, 7, 0.92), linear_interpolation(num_subplots, 2, 0.025, 7, 0.1), linear_interpolation(num_subplots, 2, 0.035, 7, 0.01), linear_interpolation(num_subplots, 2, 0.765, 7, 0.6)] , anchor = 'E') 
     fig.colorbar(im, cax=ax1, ax=None, label = '$T_B$ ($10^9$ K)', ticklocation='right')
     
-    plt.suptitle("Median", y=0.95, fontsize=22)
+    plt.suptitle("Minimum", y=0.95, fontsize=22)
     # Save Plot
     plt.savefig(f'{outpath}.png', bbox_inches='tight')
     

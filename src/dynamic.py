@@ -61,8 +61,8 @@ obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
 
 ######################################################################
 # Set parameters
-npix   = 160
-fov    = 160 * eh.RADPERUAS
+npix   = 200
+fov    = 200 * eh.RADPERUAS
 blur   = 0 * eh.RADPERUAS
 ######################################################################
 
@@ -87,10 +87,15 @@ for p in paths.keys():
             imlistUarr.append(im.imarr(pol='U'))
             imlistVarr.append(im.imarr(pol='V'))
 
-        medianI = np.median(imlistIarr,axis=0)
-        medianQ = np.median(imlistQarr,axis=0)
-        medianU = np.median(imlistUarr,axis=0)
-        medianV = np.median(imlistVarr,axis=0)
+        #medianI = np.median(imlistIarr,axis=0)
+        #medianQ = np.median(imlistQarr,axis=0)
+        #medianU = np.median(imlistUarr,axis=0)
+        #medianV = np.median(imlistVarr,axis=0)
+        
+        medianI = np.min(imlistIarr,axis=0)
+        medianQ = np.min(imlistQarr,axis=0)
+        medianU = np.min(imlistUarr,axis=0)
+        medianV = np.min(imlistVarr,axis=0)
 
         for im in imlist:
             if len(im.ivec)!=0: 

@@ -60,7 +60,7 @@ if args.ngmv!='none':
 #################################################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
-obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(obs, args, paths)
+obs, obs_t, obslist_t, splitObs, times, I, snr, w_norm = process_obs_weights(obs, args, paths)
 
 ##################################################################################################
 
@@ -143,8 +143,10 @@ for pol in pollist:
             mv_list2.append(im)
         mv=eh.movie.merge_im_list(mv_list2)
 
-        imlist_o = [mv.get_image(t) for t in times]
+        imlist = [mv.get_image(t) for t in times]
+        imlist_t = [mvt.get_image(t) for t in times]
         
+        """
         # center the movie with repect to the truth movie frame 0
         mvtruth_image=eh.movie.load_hdf5(pathmovt).avg_frame()
         shift = mvtruth_image.align_images([mv.avg_frame()])[1] #Shifts only from stokes I
@@ -152,15 +154,21 @@ for pol in pollist:
         for im in imlist_o:
             im2 = im.shift(shift[0]) # Shifts all pol
             imlist.append(im2)
-            
+        """
+        
+        # Shifting each frame of the movie to align with the truth
         imlistarr=[]
-        for im in imlist:
-            #im.ivec=im.ivec/im.total_flux()
+        imlist_aligned=[]
+        for im, imt in zip(imlist, imlist_t):
+            shift = imt.align_images([im])[1]
+            im = im.shift(shift[0])
+            imlist_aligned.append(im)
             imlistarr.append(im.imarr(pol=pol))
-        median = np.median(imlistarr,axis=0)
-        for im in imlist:
+        # Subtracting the median of the reconstructed video from each frame    
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
+        for im in imlist_aligned:
             if pol=='I':
-                #im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
                 im.ivec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='Q':
                 im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
@@ -169,19 +177,14 @@ for pol in pollist:
             elif pol=='V':
                 im.vvec= np.array(im.imarr(pol=pol)-median).flatten()
     
-    
-        imlist_t =[mvt.get_image(t) for t in times]
+        # Subtracting the median of the truth video from each frame
         imlistarr=[]
         for im in imlist_t:
-            #im.ivec=im.ivec/im.total_flux()
-            #im.qvec=im.qvec/im.total_flux()
-            #im.uvec=im.uvec/im.total_flux()
-            #im.vvec=im.vvec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
-        median = np.median(imlistarr,axis=0)
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
         for im in imlist_t:
             if pol=='I':
-                #im.ivec= np.clip(im.imarr(pol=pol)-median,0,1).flatten()
                 im.ivec= np.array(im.imarr(pol=pol)-median).flatten()
             elif pol=='Q':
                 im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
@@ -194,7 +197,7 @@ for pol in pollist:
         nxcorr_tab=[]
 
         i=0
-        for im in imlist:
+        for im in imlist_aligned:
             nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'], shift=[0,0])
             nxcorr_t.append(nxcorr[0][0]+s)
             nxcorr_tab.append(nxcorr[0][0])

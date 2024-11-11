@@ -157,7 +157,7 @@ def static(ims, titles, paths, outpath='./', fov=None, interp='gaussian'):
         cbar = fig.colorbar(tickplot, cmap='rainbow', cax=ax1, pad=0.14,fraction=0.038, orientation="vertical", ticklocation='right') 
         cbar.set_label('$|m|$') 
         
-        plt.suptitle("Median", y=0.95, fontsize=22)
+        plt.suptitle("Minimum", y=0.95, fontsize=22)
         # Save Plot
         plt.savefig(f'{outpath}.png', bbox_inches='tight')
 

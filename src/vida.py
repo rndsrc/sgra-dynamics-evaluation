@@ -68,7 +68,7 @@ if args.ngmv!='none':
 ######################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
-obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(obs, args, paths)
+obs, obs_t, obslist_t, splitObs, times, I, snr, w_norm = process_obs_weights(obs, args, paths)
 
 outpath_csv={}
 
@@ -338,7 +338,7 @@ elif model=='disk':
     
     table_vals.replace(0.00, '-', inplace=True)
 
-    table = ax[0,0].table(cellText=table_vals.values,
+    table = ax[0].table(cellText=table_vals.values,
                         rowLabels=table_vals.index,
                         colLabels=table_vals.columns,
                         cellLoc='center',

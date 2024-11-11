@@ -87,11 +87,11 @@ for i in range(len(times)-1):
         j=0
         while u_times[len(u_times)-1] < times[i+1]-mean_dt:
             u_times.append(times[i]+j*mean_dt)
-            cmapsl.append('bwr')
+            cmapsl.append('binary_us')
             j=j+1
     else:
         u_times.append(times[i])
-        cmapsl.append('bwr')
+        cmapsl.append('binary_us')
 
 ######################################################################
 
@@ -120,10 +120,13 @@ for p in paths.keys():
             imlistarrQ.append(im.imarr(pol='Q'))
             imlistarrU.append(im.imarr(pol='U'))
             
-    medianI = np.median(imlistarrI,axis=0)
+    #medianI = np.median(imlistarrI,axis=0)
+    medianI = np.min(imlistarrI,axis=0)
     if len(imlistarrQ) and len(imlistarrQ) > 0:
-        medianQ = np.median(imlistarrQ,axis=0)
-        medianU = np.median(imlistarrU,axis=0)
+        #medianQ = np.median(imlistarrQ,axis=0)
+        medianQ = np.min(imlistarrQ,axis=0)
+        #medianU = np.median(imlistarrU,axis=0)
+        medianU = np.min(imlistarrU,axis=0)
     #if len(imlistarrm)>0:
     #    medianm = np.median(imlistarrm,axis=0).flatten()
 
@@ -161,7 +164,7 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
 
     # Set colorbar limits
     TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, -max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor #min(movieIs['kine'][0].ivec)*TBfactor
+    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor #min(movieIs['kine'][0].ivec)*TBfactor
     
     polmovies={}
     for i, p in enumerate(movieIs.keys()):    
@@ -224,12 +227,12 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
                                headwidth = 1,
                                pivot='mid',
                                width=0.01,
-                               cmap='gnuplot',
+                               cmap='rainbow',
                                norm=cnorm,
                                scale=16)
         if f==0:
             ax1 = fig.add_axes([linear_interpolation(num_subplots, 2, 0.82, 7, 0.92), linear_interpolation(num_subplots, 2, 0.025, 7, 0.1), linear_interpolation(num_subplots, 2, 0.035, 7, 0.01), linear_interpolation(num_subplots, 2, 0.765, 7, 0.6)] , anchor = 'E') 
-            cbar = fig.colorbar(tickplot, cmap='gnuplot', cax=ax1, pad=0.14,fraction=0.038, orientation="vertical", ticklocation='right') 
+            cbar = fig.colorbar(tickplot, cmap='rainbow', cax=ax1, pad=0.14,fraction=0.038, orientation="vertical", ticklocation='right') 
             cbar.set_label('$|m|$') 
         
         plt.suptitle(f"{u_times[f]:.2f} UT", y=0.95, fontsize=22)

@@ -343,6 +343,9 @@ def process_obs_weights(obs,args,paths):
         v = unpackedobj['v']
         I.append(isotropy_metric_normalized(u, v, i_max=imax, r_max=rmax))
 
+    I=np.array(I)
+    I=I/np.max(I)
+    
     for i in range(len(obslist_t)):
         df=pd.DataFrame(obslist_t[i].data)
         snr['I'].append(np.mean(np.abs(df['vis'])/df['sigma']))
@@ -351,12 +354,10 @@ def process_obs_weights(obs,args,paths):
         snr['V'].append(np.mean(np.abs(df['vvis'])/df['vsigma']))
 
     for x in snr.keys():    
-        snr[x]=np.array(snr[x])
-        snr[x]=snr[x]/np.max(snr[x])
-
-    I=np.array(I)
-    I=I/np.max(I)
-
+        snr[x] = np.array(snr[x])
+        # Squeeze SNR between min and max of I
+        snr[x] = np.min(I) + ((snr[x] - np.min(snr[x])) / (np.max(snr[x]) - np.min(snr[x]))) * (np.max(I) - np.min(I))
+        
     w_norm={}
     w_norm['I']=[]
     w_norm['Q']=[]
@@ -367,10 +368,8 @@ def process_obs_weights(obs,args,paths):
         w = I*snr[x]
         w_sum=np.sum(w)
         w_norm[x]=np.array(w/w_sum)
-
-    equal_w=1/len(w_norm['I'])
     
-    return obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w
+    return obs, obs_t, obslist_t, splitObs, times, I, snr, w_norm
 
 
 

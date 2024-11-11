@@ -7,7 +7,7 @@ import glob
 import ehtim as eh
 codedir=os.getcwd()+'/src'
 
-def evaluation(subdir='./submissions/', resultsdir='./results/', eval_chisq=True, eval_closure_phases=True, eval_amplitudes=True, plot_gifs=True, eval_nxcorr=True, plot_mbreve=True, plot_vis_var=True, eval_rex=True, eval_VIDA_pol=True, eval_VIDA=True, eval_pattern_speed=True, cores=100):
+def evaluation(subdir='./submissions/', resultsdir='./results/', eval_chisq=True, eval_closure_phases=True, eval_amplitudes=True, plot_gifs=True, eval_nxcorr=True, plot_mbreve=True, plot_vis_var=True, eval_rex=True, eval_VIDA_pol=True, eval_VIDA=True, eval_pattern_speed=True, cores=8):
     if not os.path.exists(f'{resultsdir}'):
         os.makedirs(f'{resultsdir}')
     # Dictionary of vida templates available
@@ -278,6 +278,22 @@ def evaluation(subdir='./submissions/', resultsdir='./results/', eval_chisq=True
                 outpath =f'{resultsdir}/{model}_{band}_{scat}_nxcorr_dynamic_threshold'
                 if not os.path.exists(outpath+'.png'):
                     os.system(f'python {codedir}/nxcorr_dynamic_threshold.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    
+                outpath =f'{resultsdir}/{model}_{band}_{scat}_rssd'
+                if not os.path.exists(outpath+'.png'):
+                    os.system(f'python {codedir}/rssd.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    
+                outpath =f'{resultsdir}/{model}_{band}_{scat}_rssd_static'
+                if not os.path.exists(outpath+'.png'):
+                    os.system(f'python {codedir}/rssd_static.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    
+                outpath =f'{resultsdir}/{model}_{band}_{scat}_rssd_dynamic'
+                if not os.path.exists(outpath+'.png'):
+                    os.system(f'python {codedir}/rssd_dynamic.py --data {data} {paths} -o {outpath} --scat {scat}')
+                    
+                outpath =f'{resultsdir}/{model}_{band}_{scat}_weights'
+                if not os.path.exists(outpath+'.png'):
+                    os.system(f'python {codedir}/weights.py --data {data} {paths} -o {outpath} --scat {scat}')
 
         ##############################################################################################
         # MBREVE

@@ -42,6 +42,9 @@ args = create_parser().parse_args()
 pathmovt  = args.truthmv
 outpath = args.outpath
 
+npix   = 200
+fov    = 200 * eh.RADPERUAS
+
 paths={}
 if args.kinemv!='none':
     paths['kine']=args.kinemv
@@ -56,7 +59,7 @@ if args.ngmv!='none':
 ######################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
-obs, obs_t, obslist_t, splitObs, times, w_norm, equal_w = process_obs_weights(obs, args, paths)
+obs, obs_t, obslist_t, splitObs, times, I, snr, w_norm = process_obs_weights(obs, args, paths)
 
 ######################################################################
 
@@ -83,6 +86,13 @@ mvt=eh.movie.load_hdf5(pathmovt)
 #if args.scat=='dsct':
 if args.scat!='onsky':
     mvt=mvt.blur_circ(fwhm_x=15*eh.RADPERUAS, fwhm_x_pol=15*eh.RADPERUAS, fwhm_t=0)
+
+mvt_list= mvt.im_list()
+mvt_list2=[]
+for im in mvt_list:
+    im = im.regrid_image(fov, npix)
+    mvt_list2.append(im)
+mvt=eh.movie.merge_im_list(mvt_list2)
 
 mv_nxcorr={}
 for p in paths.keys():
@@ -125,13 +135,20 @@ for pol in pollist:
     s=0
     for p in polpaths.keys():
         mv=eh.movie.load_hdf5(polpaths[p])
+        mv_list= mv.im_list()
+        mv_list2=[]
+        for im in mv_list:
+            im = im.regrid_image(fov, npix)
+            mv_list2.append(im)
+        mv=eh.movie.merge_im_list(mv_list2)
         
         imlist = [mv.get_image(t) for t in times]
         imlistarr=[]
         for im in imlist:
             #im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
-        median = np.median(imlistarr,axis=0)
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
         for im in imlist:
             if pol=='I':
                 im.ivec= median.flatten()
@@ -148,7 +165,8 @@ for pol in pollist:
         for im in imlist_t:
             #im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
-        median = np.median(imlistarr,axis=0)
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
         for im in imlist_t:
             if pol=='I':
                 im.ivec= median.flatten()

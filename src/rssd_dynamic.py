@@ -1,5 +1,5 @@
 ######################################################################
-# Author: Rohan Dahale, Date: 12 July 2024
+# Author: Rohan Dahale, Date: 09 November 2024
 ######################################################################
 
 # Import libraries
@@ -11,6 +11,7 @@ from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
+import scipy
 import argparse
 import os
 import glob
@@ -56,19 +57,19 @@ if args.dogmv!='none':
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
     
-######################################################################
+#################################################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
 obs, obs_t, obslist_t, splitObs, times, I, snr, w_norm = process_obs_weights(obs, args, paths)
 
-######################################################################
+##################################################################################################
 
 fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(28,8), sharex=True)
 
-ax[0].set_ylabel('nxcorr (I)')
-ax[1].set_ylabel('nxcorr (Q)')
-ax[2].set_ylabel('nxcorr (U)')
-ax[3].set_ylabel('nxcorr (V)')
+ax[0].set_ylabel('rssd (I)')
+ax[1].set_ylabel('rssd (Q)')
+ax[2].set_ylabel('rssd (U)')
+ax[3].set_ylabel('rssd (V)')
 
 ax[0].set_xlabel('Time (UTC)')
 ax[1].set_xlabel('Time (UTC)')
@@ -85,7 +86,7 @@ ax[3].set_ylim(0,7)
 mvt=eh.movie.load_hdf5(pathmovt)
 if args.scat!='onsky':
     mvt=mvt.blur_circ(fwhm_x=15*eh.RADPERUAS, fwhm_x_pol=15*eh.RADPERUAS, fwhm_t=0)
-    
+
 mvt_list= mvt.im_list()
 mvt_list2=[]
 for im in mvt_list:
@@ -141,21 +142,68 @@ for pol in pollist:
             im = im.regrid_image(fov, npix)
             mv_list2.append(im)
         mv=eh.movie.merge_im_list(mv_list2)
-        
+
         imlist = [mv.get_image(t) for t in times]
-        imlist_t =[mvt.get_image(t) for t in times]
+        imlist_t = [mvt.get_image(t) for t in times]
+        
+        """
+        # center the movie with repect to the truth movie frame 0
+        mvtruth_image=eh.movie.load_hdf5(pathmovt).avg_frame()
+        shift = mvtruth_image.align_images([mv.avg_frame()])[1] #Shifts only from stokes I
+        imlist=[]
+        for im in imlist_o:
+            im2 = im.shift(shift[0]) # Shifts all pol
+            imlist.append(im2)
+        """
+        
+        # Shifting each frame of the movie to align with the truth
+        imlistarr=[]
+        imlist_aligned=[]
+        for im, imt in zip(imlist, imlist_t):
+            shift = imt.align_images([im])[1]
+            im = im.shift(shift[0])
+            imlist_aligned.append(im)
+            imlistarr.append(im.imarr(pol=pol))
+        # Subtracting the median of the reconstructed video from each frame    
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
+        for im in imlist_aligned:
+            if pol=='I':
+                im.ivec= np.array(im.imarr(pol=pol)-median).flatten()
+            elif pol=='Q':
+                im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
+            elif pol=='U':
+                im.uvec= np.array(im.imarr(pol=pol)-median).flatten()
+            elif pol=='V':
+                im.vvec= np.array(im.imarr(pol=pol)-median).flatten()
+    
+        # Subtracting the median of the truth video from each frame
+        imlistarr=[]
+        for im in imlist_t:
+            imlistarr.append(im.imarr(pol=pol))
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
+        for im in imlist_t:
+            if pol=='I':
+                im.ivec= np.array(im.imarr(pol=pol)-median).flatten()
+            elif pol=='Q':
+                im.qvec= np.array(im.imarr(pol=pol)-median).flatten()
+            elif pol=='U':
+                im.uvec= np.array(im.imarr(pol=pol)-median).flatten()
+            elif pol=='V':
+                im.vvec= np.array(im.imarr(pol=pol)-median).flatten()
 
         nxcorr_t=[]
         nxcorr_tab=[]
 
         i=0
-        for im in imlist:
-            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'])
-            nxcorr_t.append(nxcorr[0][0]+s)
-            nxcorr_tab.append(nxcorr[0][0])
+        for im in imlist_aligned:
+            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['rssd'], shift=[0,0])
+            nxcorr_t.append(np.exp(-nxcorr[0][0]/im.psize)+s)
+            nxcorr_tab.append(np.exp(-nxcorr[0][0]/im.psize))
             i=i+1
         
-        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),3)
+        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),4)
                     
         mc=colors[p]
         alpha = 0.5
@@ -172,10 +220,10 @@ for pol in pollist:
     
     k=k+1
     
-table_vals.rename(index={'I':'nxcorr (I)'},inplace=True)
-table_vals.rename(index={'Q':'nxcorr (Q)'},inplace=True)
-table_vals.rename(index={'U':'nxcorr (U)'},inplace=True)
-table_vals.rename(index={'V':'nxcorr (V)'},inplace=True)
+table_vals.rename(index={'I':'rssd (I)'},inplace=True)
+table_vals.rename(index={'Q':'rssd (Q)'},inplace=True)
+table_vals.rename(index={'U':'rssd (U)'},inplace=True)
+table_vals.rename(index={'V':'rssd (V)'},inplace=True)
 table_vals.replace(0.000, '-', inplace=True)
 
 table = ax[1].table(cellText=table_vals.values,

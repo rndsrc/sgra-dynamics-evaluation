@@ -11,6 +11,7 @@ from preimcal import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pdb
+import scipy
 import argparse
 import os
 import glob
@@ -37,7 +38,7 @@ def create_parser():
 
 # List of parsed arguments
 args = create_parser().parse_args()
-
+    
 pathmovt  = args.truthmv
 outpath = args.outpath
 
@@ -55,7 +56,6 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
-    
 ######################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
@@ -83,9 +83,10 @@ ax[3].set_ylim(0,7)
 
 
 mvt=eh.movie.load_hdf5(pathmovt)
+#if args.scat=='dsct':
 if args.scat!='onsky':
     mvt=mvt.blur_circ(fwhm_x=15*eh.RADPERUAS, fwhm_x_pol=15*eh.RADPERUAS, fwhm_t=0)
-    
+
 mvt_list= mvt.im_list()
 mvt_list2=[]
 for im in mvt_list:
@@ -134,7 +135,6 @@ for pol in pollist:
     s=0
     for p in polpaths.keys():
         mv=eh.movie.load_hdf5(polpaths[p])
-        
         mv_list= mv.im_list()
         mv_list2=[]
         for im in mv_list:
@@ -143,19 +143,51 @@ for pol in pollist:
         mv=eh.movie.merge_im_list(mv_list2)
         
         imlist = [mv.get_image(t) for t in times]
+        imlistarr=[]
+        for im in imlist:
+            #im.ivec=im.ivec/im.total_flux()
+            imlistarr.append(im.imarr(pol=pol))
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
+        for im in imlist:
+            if pol=='I':
+                im.ivec= median.flatten()
+            elif pol=='Q':
+                im.qvec= median.flatten()
+            elif pol=='U':
+                im.uvec= median.flatten()
+            elif pol=='V':
+                im.vvec= median.flatten()
+    
+
         imlist_t =[mvt.get_image(t) for t in times]
+        imlistarr=[]
+        for im in imlist_t:
+            #im.ivec=im.ivec/im.total_flux()
+            imlistarr.append(im.imarr(pol=pol))
+        #median = np.median(imlistarr,axis=0)
+        median = np.min(imlistarr,axis=0)
+        for im in imlist_t:
+            if pol=='I':
+                im.ivec= median.flatten()
+            elif pol=='Q':
+                im.qvec= median.flatten()
+            elif pol=='U':
+                im.uvec= median.flatten()
+            elif pol=='V':
+                im.vvec= median.flatten()
 
         nxcorr_t=[]
         nxcorr_tab=[]
 
         i=0
         for im in imlist:
-            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['nxcorr'])
-            nxcorr_t.append(nxcorr[0][0]+s)
-            nxcorr_tab.append(nxcorr[0][0])
+            nxcorr=imlist_t[i].compare_images(im, pol=pol, metric=['rssd'])
+            nxcorr_t.append(np.exp(-nxcorr[0][0]/im.psize)+s)
+            nxcorr_tab.append(np.exp(-nxcorr[0][0]/im.psize))
             i=i+1
         
-        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),3)
+        table_vals[p][pol]=np.round(np.sum(w_norm[pol]*np.array(nxcorr_tab)),4)
                     
         mc=colors[p]
         alpha = 0.5

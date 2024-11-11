@@ -91,7 +91,7 @@ function parse_commandline()
 end
 
 parsed_args = parse_commandline()
-addprocs(Int(parsed_args["stride"]/4))
+addprocs(8) #addprocs(Int(parsed_args["stride"]/4))
 
 @everywhere begin
     using VIDA

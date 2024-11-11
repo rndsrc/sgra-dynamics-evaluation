@@ -60,7 +60,9 @@ if args.kinemv!='none':
 
 obs = eh.obsdata.load_uvfits(args.data)
 obs.add_scans()
+obs = obs.switch_polrep(polrep_out ='circ')
 amp = pd.DataFrame(obs.data)
+obs = obs.switch_polrep(polrep_out ='stokes')
 times = []
 for t in obs.scans:
     times.append(t[0])

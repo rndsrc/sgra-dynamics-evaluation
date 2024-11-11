@@ -86,11 +86,11 @@ for i in range(len(times)-1):
         j=0
         while u_times[len(u_times)-1] < times[i+1]-mean_dt:
             u_times.append(times[i]+j*mean_dt)
-            cmapsl.append('binary_usr')
+            cmapsl.append('binary_us')
             j=j+1
     else:
         u_times.append(times[i])
-        cmapsl.append('afmhot_us')
+        cmapsl.append('binary_us')
 
 ######################################################################
 
@@ -109,7 +109,8 @@ for p in paths.keys():
         imlistI.append(im)
         imlistarr.append(im.imarr(pol='I'))
         
-    median = np.median(imlistarr,axis=0)
+    #median = np.median(imlistarr,axis=0)
+    median = np.min(imlistarr,axis=0)
     for im in imlistI:
         im.ivec= np.array(im.imarr(pol='I')-median).flatten()
         
@@ -136,7 +137,7 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
 
     # Set colorbar limits
     TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, -max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
+    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
 
     def plot_frame(f):
         for i, p in enumerate(movieIs.keys()):

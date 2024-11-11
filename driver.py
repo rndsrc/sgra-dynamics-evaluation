@@ -30,25 +30,22 @@ Full path to the directory that will contain all the results.
 # Submission Directory
 subdir='/mnt/disks/shared/eht/sgra_dynamics_april11/DAR_09Nov2024/submissions/'
 # Results Directory
-resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/DAR_09Nov2024/results/'
+resultsdir='/mnt/disks/shared/eht/sgra_dynamics_april11/DAR_09Nov2024/results_test/'
         
 
-eval_chisq            = True  # Chi-squares: I, Q, U, V | cphase, logcamp, amp
-eval_closure_phases   = True  # Fits to closures triangles: I, Q, U, V
+eval_chisq            = False  # Chi-squares: I, Q, U, V | cphase, logcamp, amp
+eval_closure_phases   = False  # Fits to closures triangles: I, Q, U, V
                               # [('AZ', 'LM', 'SM'), ('AA', 'AZ', 'SM'), ('AA', 'LM', 'SM')]
-eval_amplitudes       = True      # Fits to amplitudes: I, Q, U, V
+eval_amplitudes       = False      # Fits to amplitudes: I, Q, U, V
                               # [('AZ', 'LM'), ('AA', 'AZ'), ('LM', 'SM')]                          
-plot_gifs             = True  # Plot Stokes I, Stokes P, Stokes V Gif: Total, Dynamic, Static
-eval_nxcorr           = True  # NXCORR: Total, Static, Dynamic, NXCORR Thresholds
-plot_mbreve           = True  # Plot mbreve
-plot_vis_var          = True  # Plot visibility variance of truth and resconstructions
-eval_rex              = True  # Ring characterization with REx in total intensity and polarization
-eval_VIDA_pol         = True  # Ring characterization with VIDA in polarization
-eval_VIDA             = True  # VIDA templates fits : total and dynamic component
-eval_pattern_speed    = True  # Pattern speed for ring models
-
-# Physical CPU cores to be used
-cores = 64
+plot_gifs             = False  # Plot Stokes I, Stokes P, Stokes V Gif: Total, Dynamic, Static
+eval_nxcorr           = True   # NXCORR: Total, Static, Dynamic, NXCORR Thresholds
+plot_mbreve           = False  # Plot mbreve
+plot_vis_var          = False  # Plot visibility variance of truth and resconstructions
+eval_rex              = False  # Ring characterization with REx in total intensity and polarization
+eval_VIDA_pol         = False  # Ring characterization with VIDA in polarization
+eval_VIDA             = False  # VIDA templates fits : total and dynamic component
+eval_pattern_speed    = False  # Pattern speed for ring models
 
 # Only when running for the first time
 #setupdir=os.getcwd()+'/src'
@@ -58,4 +55,4 @@ ev.evaluation(subdir=subdir, resultsdir=resultsdir, eval_chisq=eval_chisq,
          eval_closure_phases=eval_closure_phases, eval_amplitudes=eval_amplitudes, 
          plot_gifs=plot_gifs, eval_nxcorr=eval_nxcorr, plot_mbreve=plot_mbreve, 
          plot_vis_var=plot_vis_var, eval_rex=eval_rex, eval_VIDA_pol=eval_VIDA_pol, 
-         eval_VIDA=eval_VIDA, eval_pattern_speed=eval_pattern_speed, cores=cores)
+         eval_VIDA=eval_VIDA, eval_pattern_speed=eval_pattern_speed)
