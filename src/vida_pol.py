@@ -99,27 +99,27 @@ for p in paths.keys():
 
 ######################################################################
 
-fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(15,6), sharex=True)
-fig.subplots_adjust(hspace=0.1, wspace=0.5, top=0.8, bottom=0.01, left=0.01, right=0.8)
+fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(15,8), sharex=True)
+fig.subplots_adjust(hspace=0.1, wspace=0.2, top=0.8, bottom=0.01, left=0.01, right=0.95)
 
 ax[0,0].set_ylabel('$|m|_{net}$')
 ax[0,1].set_ylabel('$ \\langle |m| \\rangle$')
-ax[0,2].set_ylabel('$v_{net}$')
-ax[0,3].set_ylabel('$ \\langle |v| \\rangle $')
+#ax[0,2].set_ylabel('$v_{net}$')
+#ax[0,3].set_ylabel('$ \\langle |v| \\rangle $')
 
 ax[1,0].set_ylabel('$|\\beta_{LP,2}|$')
 ax[1,1].set_ylabel('$\\angle \\beta_{LP,2}$')
 ax[1,1].set_ylim(0,360)
 ax[1,1].set_yticks([0,90,180,270,360])
-ax[1,2].set_ylabel('$|\\beta_{CP,1}|$')
-ax[1,3].set_ylabel('$ \\angle \\beta_{CP,1}$')
-ax[1,3].set_ylim(0,360)
-ax[1,3].set_yticks([0,90,180,270,360])
+#ax[1,2].set_ylabel('$|\\beta_{CP,1}|$')
+#ax[1,3].set_ylabel('$ \\angle \\beta_{CP,1}$')
+#ax[1,3].set_ylim(0,360)
+#ax[1,3].set_yticks([0,90,180,270,360])
 
 ax[1,0].set_xlabel('Time (UTC)')
 ax[1,1].set_xlabel('Time (UTC)')
-ax[1,2].set_xlabel('Time (UTC)')
-ax[1,3].set_xlabel('Time (UTC)')
+#ax[1,2].set_xlabel('Time (UTC)')
+#ax[1,3].set_xlabel('Time (UTC)')
 
 s={}
 m_net_dict={}
@@ -159,28 +159,28 @@ for p in paths.keys():
     if np.sum(m_net)!=0:
         ax[0,0].plot(times, m_net,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
         ax[0,1].plot(times, m_avg,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
-    if np.sum(v_net)!=0:
-        ax[0,2].plot(times, v_net,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
-        ax[0,3].plot(times, v_avg,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
+    #if np.sum(v_net)!=0:
+    #    ax[0,2].plot(times, v_net,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
+    #    ax[0,3].plot(times, v_avg,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
     if np.sum(mod_betalp_2)!=0:
         ax[1,0].plot(times, mod_betalp_2,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
         ax[1,1].plot(times, ang_betalp_2,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
-    if np.sum(mod_betacp_1)!=0:
-        ax[1,2].plot(times, mod_betacp_1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
-        ax[1,3].plot(times, ang_betacp_1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
+    #if np.sum(mod_betacp_1)!=0:
+    #    ax[1,2].plot(times, mod_betacp_1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
+    #    ax[1,3].plot(times, ang_betacp_1,  marker ='o', mfc=mfc, mec=mc, ms=ms, ls='-', lw=1,  color=lc, alpha=alpha)
 
     m_net_dict[p] = m_net
     m_avg_dict[p] = m_avg
     ang_betalp_2_dict[p] = ang_betalp_2
-    ang_betacp_1_dict[p] = ang_betacp_1
+    #ang_betacp_1_dict[p] = ang_betacp_1
 
 if args.truthmv!='none':
     score={}
     for p in paths.keys():
         if p!='truth':
-            score[p]=np.zeros(4)
+            score[p]=np.zeros(3)
     
-    row_labels = ['$|m|_{net}$', '$ \\langle |m| \\rangle$', '$ \\angle \\beta_{LP,2}$', '$ \\angle \\beta_{CP,1}$']
+    row_labels = ['$|m|_{net}$', '$ \\langle |m| \\rangle$', '$ \\angle \\beta_{LP,2}$']
     table_vals = pd.DataFrame(data=score, index=row_labels)
     
     for p in paths.keys():
@@ -198,19 +198,23 @@ if args.truthmv!='none':
                 signal2 = ang_betalp_2_dict[p]
                 table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
     
-                signal1 = ang_betacp_1_dict['truth']
-                signal2 = ang_betacp_1_dict[p]
-                table_vals[p][row_labels[3]] = normalized_rmse(signal1, signal2, w_norm['I'])
+                #signal1 = ang_betacp_1_dict['truth']
+                #signal2 = ang_betacp_1_dict[p]
+                #table_vals[p][row_labels[3]] = normalized_rmse(signal1, signal2, w_norm['I'])
     
     
     table_vals.replace(0.00, '-', inplace=True)
     
+    col_labels=[]
+    for p in table_vals.keys():
+        col_labels.append(titles[p])
+    
     table = ax[0,1].table(cellText=table_vals.values,
                         rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
+                        colLabels=col_labels,#table_vals.columns,
                         cellLoc='center',
                         loc='bottom',
-                        bbox=[-0.1, -2.2, 3.5, 0.7])
+                        bbox=[-1.1, -2.2, 2.5, 0.5])
     table.auto_set_font_size(False)
     table.set_fontsize(18)
     for c in table.get_children():
@@ -219,5 +223,5 @@ if args.truthmv!='none':
         c.set_facecolor('none')
         c.set_edgecolor('black')
     
-ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(5.25, 1.35), markerscale=2)
+ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.5, 1.35), markerscale=2)
 plt.savefig(outpath, bbox_inches='tight', dpi=300)

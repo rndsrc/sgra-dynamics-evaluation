@@ -192,9 +192,13 @@ if model=='crescent':
     
         table_vals.replace(0.00, '-', inplace=True)
     
+        col_labels=[]
+        for p in table_vals.keys():
+            col_labels.append(titles[p])
+        
         table = ax[0,0].table(cellText=table_vals.values,
                             rowLabels=table_vals.index,
-                            colLabels=table_vals.columns,
+                            colLabels=col_labels,#table_vals.columns,
                             cellLoc='center',
                             loc='bottom',
                             bbox=[0.35, -2.3, 1.5, 0.7])
@@ -268,10 +272,14 @@ elif model=='ring':
             table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
 
     table_vals.replace(0.00, '-', inplace=True)
+    
+    col_labels=[]
+    for p in table_vals.keys():
+        col_labels.append(titles[p])
 
     table = ax[0].table(cellText=table_vals.values,
                         rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
+                        colLabels=col_labels,#table_vals.columns,
                         cellLoc='center',
                         loc='bottom',
                         bbox=[0.35, -0.9, 1.5, 0.5])
@@ -341,9 +349,13 @@ elif model=='disk':
     
     table_vals.replace(0.00, '-', inplace=True)
 
+    col_labels=[]
+    for p in table_vals.keys():
+        col_labels.append(titles[p])
+        
     table = ax[0].table(cellText=table_vals.values,
                         rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
+                        colLabels=col_labels,#table_vals.columns,
                         cellLoc='center',
                         loc='bottom',
                         bbox=[0.35, -0.9, 1.5, 0.5])
@@ -441,10 +453,14 @@ elif model=='edisk':
             table_vals[p][row_labels[3]] = normalized_rmse(signal1, signal2, w_norm['I'])
     
     table_vals.replace(0.00, '-', inplace=True)
+    
+    col_labels=[]
+    for p in table_vals.keys():
+        col_labels.append(titles[p])
 
     table = ax[0,0].table(cellText=table_vals.values,
                         rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
+                        colLabels=col_labels,#table_vals.columns,
                         cellLoc='center',
                         loc='bottom',
                         bbox=[0.35, -2.3, 1.5, 0.7])
@@ -553,9 +569,13 @@ elif model=='double':
     
     table_vals.replace(0.00, '-', inplace=True)
 
+    col_labels=[]
+    for p in table_vals.keys():
+        col_labels.append(titles[p])
+        
     table = ax[0,0].table(cellText=table_vals.values,
                         rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
+                        colLabels=col_labels,#table_vals.columns,
                         cellLoc='center',
                         loc='bottom',
                         bbox=[0.35, -2.3, 1.5, 0.7])
@@ -662,10 +682,14 @@ elif model=='point':
             table_vals[p][row_labels[3]] = normalized_rmse(signal1, signal2, w_norm['I'])
     
     table_vals.replace(0.00, '-', inplace=True)
+    
+    col_labels=[]
+    for p in table_vals.keys():
+        col_labels.append(titles[p])
 
     table = ax[0,0].table(cellText=table_vals.values,
                         rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
+                        colLabels=col_labels,#table_vals.columns,
                         cellLoc='center',
                         loc='bottom',
                         bbox=[0.35, -2.3, 1.5, 0.7])
@@ -755,10 +779,14 @@ elif model=='gaussian':
                 table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
         
         table_vals.replace(0.00, '-', inplace=True)
+        
+        col_labels=[]
+        for p in table_vals.keys():
+            col_labels.append(titles[p])
     
         table = ax[0,0].table(cellText=table_vals.values,
                             rowLabels=table_vals.index,
-                            colLabels=table_vals.columns,
+                            colLabels=col_labels,#table_vals.columns,
                             cellLoc='center',
                             loc='bottom',
                             bbox=[0.35, -2.3, 1.5, 0.7])
