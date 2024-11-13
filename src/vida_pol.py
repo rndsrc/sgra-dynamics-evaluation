@@ -36,6 +36,7 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none', help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./plot.png', help='name of output file with path')
     p.add_argument('-c', '--cores', type=int, default='64',help='number of cores to use')
     p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
@@ -63,6 +64,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
 
 ######################################################################
 
@@ -149,7 +152,7 @@ for p in paths.keys():
     ang_betalp_2 = ang_betalp_2%360
 
     mc=colors[p]
-    alpha = 0.5
+    alpha=1.0
     lc=colors[p]
     ms=mss[p]
     mfc=mfcs[p]

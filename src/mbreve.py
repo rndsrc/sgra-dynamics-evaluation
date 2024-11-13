@@ -33,6 +33,7 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none', help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./amp.png', 
                    help='name of output file with path')
     p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
@@ -46,6 +47,8 @@ outpath = args.outpath
 
 paths={}
 
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
 if args.dogmv!='none':
@@ -59,6 +62,9 @@ if args.kinemv!='none':
 ######################################################################
 
 obs = eh.obsdata.load_uvfits(args.data)
+obs = obs.avg_coherent(60)
+obs = obs.flag_UT_range(UT_start_hour=10.89, UT_stop_hour=14.05, output='flagged')
+
 obs.add_scans()
 obs = obs.switch_polrep(polrep_out ='circ')
 amp = pd.DataFrame(obs.data)
@@ -102,6 +108,8 @@ for p in paths.keys():
 
 mb_time, mb_window = dict(), dict()
 
+print(polpaths.keys())
+
 for p in polpaths.keys():
     mv = eh.movie.load_hdf5(polpaths[p])
     mb_time[p], mb_window[p] = [], []
@@ -109,6 +117,8 @@ for p in polpaths.keys():
         tstamp = times[ii]
         im = mv.get_image(times[ii])
         im.rf = obslist_t[ii].rf
+        im.ra=obslist_t[ii].ra
+        im.dec=obslist_t[ii].dec
         if im.xdim%2 == 1:
             im = im.regrid_image(targetfov=im.fovx(), npix=im.xdim-1)
             im.rf=obslist_t[ii].rf
@@ -120,7 +130,7 @@ for p in polpaths.keys():
         # select baseline
         subtab  = select_baseline(amp_mod, 'AA', 'AZ')
         try:
-            idx = np.where(np.round(subtab['time'].values,3)  == np.round(tstamp,3))[0][0]                
+            idx = np.where(np.round(subtab['time'].values,3)  == np.round(tstamp,3))[0][0]             
             mb_time[p].append(subtab['time'][idx]) 
             mb_window[p].append(abs(2*subtab['rlvis'][idx]/(subtab['rrvis'][idx]+subtab['rrvis'][idx])))  
         except:

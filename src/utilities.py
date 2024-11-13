@@ -58,40 +58,43 @@ def common():
     
     colors = {
             'truth'    : 'black',
-            'kine'     : 'xkcd:azure',
-            'resolve'  : 'tab:orange',
-            'ehtim'    : 'forestgreen',
-            'doghit'   : 'darkviolet',
-            'ngmem'    : 'crimson'
+            'kine'     : '#2ca02c',
+            'resolve'  : '#d62728',
+            'ehtim'    : '#8c564b',
+            'doghit'   : '#9467bd',
+            'ngmem'    : '#ff7f0e',
+            'modeling' : '#1f77b4' 
         }
     
     titles = {  
             'truth'      : 'Truth',
-            'kine'       : 'kine',
-            'resolve'    : 'resolve',
-            'starwarps'  : 'StarWarps',
-            'ehtim'      : 'ehtim',
-            'doghit'     : 'DoG-HiT',
-            'ngmem'      : 'ngMEM'
+            'kine'       : 'method 1',
+            'resolve'    : 'method 2',
+            'ehtim'      : 'method 3',
+            'doghit'     : 'method 4',
+            'ngmem'      : 'method 5',
+            'modeling'   : 'method 6'
+        }
+    
+    labels = {  
+            'truth'      : 'Truth',
+            'kine'       : 'method 1',
+            'resolve'    : 'method 2',
+            'ehtim'      : 'method 3',
+            'doghit'     : 'method 4',
+            'ngmem'      : 'method 5',
+            'modeling'   : 'method 6'
         }
 
-    labels = {
-                'truth'    : 'Truth',
-                'kine'     : 'kine',
-                'resolve'  : 'resolve',
-                'ehtim'    : 'ehtim',
-                'doghit'   : 'DoG-HiT',
-                'ngmem'    : 'ngMEM'
-            }
-
     mfcs = {
-                'truth'    : 'none',
-                'kine'     : 'xkcd:azure',
-                'resolve'  : 'tab:orange',
-                'ehtim'    : 'forestgreen',
-                'doghit'   : 'darkviolet',
-                'ngmem'    : 'crimson'
-            }
+            'truth'    : 'none',
+            'kine'     : '#2ca02c',
+            'resolve'  : '#d62728',
+            'ehtim'    : '#8c564b',
+            'doghit'   : '#9467bd',
+            'ngmem'    : '#ff7f0e',
+            'modeling' : '#1f77b4' 
+        }
 
     mss = {
                 'truth'    : 10,
@@ -99,7 +102,8 @@ def common():
                 'resolve'  : 5,
                 'ehtim'    : 5,
                 'doghit'   : 5,
-                'ngmem'    : 5 
+                'ngmem'    : 5,
+                'modeling' : 5 
             }
 
     return colors, titles, labels, mfcs, mss
@@ -107,6 +111,7 @@ def common():
 def process_obs(obs,args,paths):
     obs.add_scans()
     obs = obs.avg_coherent(60)
+    obs = obs.flag_UT_range(UT_start_hour=10.89, UT_stop_hour=14.05, output='flagged')
     obs.add_scans()
     obslist = obs.split_obs()
     times = []
@@ -264,7 +269,7 @@ def isotropy_metric_normalized(u, v, i_max=None, r_max=None):
 
 
 def get_nxcorr_cri_beam(im, beamparams, pol):
-    im_blur = im.blur_gauss(beamparams)
+    im_blur = im.blur_gauss(beamparams, frac_pol=1.0)
     nx = im.compare_images(im_blur, pol=pol)[0][0]
     return nx
 
@@ -309,8 +314,8 @@ def process_obs_weights(obs,args,paths):
     for j, s_obs in enumerate(splitObs):
         if 'AA' in s_obs.data['t1'] or 'AA' in s_obs.data['t2']:
             s_obs = s_obs.flag_sites('AP')
-        if 'JC' in s_obs.data['t1'] or 'JC' in s_obs.data['t2']: 
-                s_obs = s_obs.flag_sites('SM')
+        if 'SM' in s_obs.data['t1'] or 'SM' in s_obs.data['t2']: 
+                s_obs = s_obs.flag_sites('JC')
 
         if len(s_obs.data)==0: continue
 

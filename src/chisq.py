@@ -28,6 +28,7 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none',help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
                    help='name of output file with path')
     p.add_argument('--pol',  type=str, default='I',help='I,Q,U,V')
@@ -52,6 +53,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
 
 ######################################################################
 
@@ -114,7 +117,7 @@ for p in polpaths.keys():
     j=j*10
                 
     mc=colors[p]
-    alpha = 0.5
+    alpha=1.0
     lc=colors[p]
     ax[0].plot(times, chicp_t,  marker ='o', mfc=mc, mec=mc, mew=2.5, ms=2.5, ls='-', lw=1,  color=lc, alpha=alpha, label=labels[p])
     ax[0].set_yscale('log')
@@ -137,12 +140,16 @@ for p in polpaths.keys():
 ax[0].legend(ncols=len(polpaths.keys()), loc='best',  bbox_to_anchor=(3., 1.2), markerscale=5.0)
 ax[0].text(10.5, 5e6, f'Stokes: {pol}', color='black', fontsize=18)
 
-col_labels =  polpaths.keys()
+col_labels=[]
+for p in polpaths.keys():
+    col_labels.append(titles[p])
+    
+col_labels = np.array(col_labels)
 row_labels = ['$\chi^{2}$ cphase','$\chi^{2}$ logcamp','$\chi^{2}$ amp']
 table_vals = pd.DataFrame(data=mv_chi, index=row_labels)
 table = ax[1].table(cellText=table_vals.values,
                      rowLabels=table_vals.index,
-                     colLabels=table_vals.columns,
+                     colLabels=col_labels,#table_vals.columns,
                      cellLoc='center',
                      loc='bottom',
                      bbox=[-0.66, -0.5, 2.5, 0.3])

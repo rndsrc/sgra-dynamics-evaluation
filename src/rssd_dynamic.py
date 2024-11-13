@@ -165,8 +165,8 @@ for pol in pollist:
             imlist_aligned.append(im)
             imlistarr.append(im.imarr(pol=pol))
         # Subtracting the median of the reconstructed video from each frame    
-        #median = np.median(imlistarr,axis=0)
-        median = np.min(imlistarr,axis=0)
+        median = np.median(imlistarr,axis=0)
+        #median = np.min(imlistarr,axis=0)
         for im in imlist_aligned:
             if pol=='I':
                 im.ivec= np.array(im.imarr(pol=pol)-median).flatten()
@@ -181,8 +181,8 @@ for pol in pollist:
         imlistarr=[]
         for im in imlist_t:
             imlistarr.append(im.imarr(pol=pol))
-        #median = np.median(imlistarr,axis=0)
-        median = np.min(imlistarr,axis=0)
+        median = np.median(imlistarr,axis=0)
+        #median = np.min(imlistarr,axis=0)
         for im in imlist_t:
             if pol=='I':
                 im.ivec= np.array(im.imarr(pol=pol)-median).flatten()

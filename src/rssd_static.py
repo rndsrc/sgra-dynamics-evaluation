@@ -147,8 +147,8 @@ for pol in pollist:
         for im in imlist:
             #im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
-        #median = np.median(imlistarr,axis=0)
-        median = np.min(imlistarr,axis=0)
+        median = np.median(imlistarr,axis=0)
+        #median = np.min(imlistarr,axis=0)
         for im in imlist:
             if pol=='I':
                 im.ivec= median.flatten()
@@ -165,8 +165,8 @@ for pol in pollist:
         for im in imlist_t:
             #im.ivec=im.ivec/im.total_flux()
             imlistarr.append(im.imarr(pol=pol))
-        #median = np.median(imlistarr,axis=0)
-        median = np.min(imlistarr,axis=0)
+        median = np.median(imlistarr,axis=0)
+        #median = np.min(imlistarr,axis=0)
         for im in imlist_t:
             if pol=='I':
                 im.ivec= median.flatten()

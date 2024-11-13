@@ -14,6 +14,7 @@ import pdb
 import argparse
 import os
 import glob
+from skimage.metrics import structural_similarity as ssim
 from utilities import *
 colors, titles, labels, mfcs, mss = common()
 plt.rcParams["xtick.direction"]="out"
@@ -32,11 +33,26 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none',help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./gif.gif', 
                    help='name of output file with path')
     p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
 
     return p
+
+
+def normalized_cross_correlation(matrix1, matrix2):
+    if matrix1.shape != matrix2.shape:
+        raise ValueError("Matrices must have the same shape")
+
+    matrix1_mean_subtracted = matrix1 - np.mean(matrix1)
+    matrix2_mean_subtracted = matrix2 - np.mean(matrix2)
+
+    numerator = np.sum(matrix1_mean_subtracted * matrix2_mean_subtracted)
+    denominator = np.sqrt(np.sum(matrix1_mean_subtracted ** 2) * np.sum(matrix2_mean_subtracted ** 2))
+    ncc = numerator / denominator
+
+    return ncc
 
 # List of parsed arguments
 args = create_parser().parse_args()
@@ -59,6 +75,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
 
 ######################################################################
 
@@ -86,17 +104,34 @@ for i in range(len(times)-1):
         j=0
         while u_times[len(u_times)-1] < times[i+1]-mean_dt:
             u_times.append(times[i]+j*mean_dt)
-            cmapsl.append('binary_usr')
+            cmapsl.append('RdGy')
             j=j+1
     else:
         u_times.append(times[i])
-        cmapsl.append('afmhot_us')
+        cmapsl.append('bwr')
 
 ######################################################################
 
 imlistIs = {}
 for p in paths.keys():
     mov = eh.movie.load_hdf5(paths[p])
+    
+    if 'truth' in paths.keys():
+        movt = eh.movie.load_hdf5(paths['truth'])
+        
+        imlist = [mov.get_image(t) for t in times]
+        imlist_t = [movt.get_image(t) for t in times]
+        
+        imlist_aligned =[]
+        for im, imt in zip(imlist, imlist_t):
+            im = im.regrid_image(fov, npix)
+            imt = imt.regrid_image(fov, npix)
+            shift = imt.align_images([im])[1]
+            im = im.shift(shift[0])
+            imlist_aligned.append(im)
+            
+        mov = eh.movie.merge_im_list(imlist_aligned)
+        
     imlistI = []
     imlistarr=[]
     for t in u_times:
@@ -109,8 +144,8 @@ for p in paths.keys():
         imlistI.append(im)
         imlistarr.append(im.imarr(pol='I'))
         
-    #median = np.median(imlistarr,axis=0)
-    median = np.min(imlistarr,axis=0)
+    median = np.median(imlistarr,axis=0)
+    #median = np.min(imlistarr,axis=0)
     for im in imlistI:
         im.ivec= np.array(im.imarr(pol='I')-median).flatten()
         
@@ -137,13 +172,24 @@ def writegif(movieIs, titles, paths, outpath='./', fov=None, times=[], cmaps=cma
 
     # Set colorbar limits
     TBfactor = 3.254e13/(movieIs[list(paths.keys())[0]][0].rf**2 * movieIs[list(paths.keys())[0]][0].psize**2)/1e9    
-    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, min(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
+    vmax, vmin = max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor, -max(movieIs[list(paths.keys())[0]][0].ivec)*TBfactor
 
     def plot_frame(f):
         for i, p in enumerate(movieIs.keys()):
             ax[i].clear() 
             TBfactor = 3.254e13/(movieIs[p][f].rf**2 * movieIs[p][f].psize**2)/1e9
             im =ax[i].imshow(np.array(movieIs[p][f].imarr(pol='I'))*TBfactor, cmap=cmaps[f], interpolation=interp, vmin=vmin, vmax=vmax, extent=lims)
+            
+            if 'truth' in paths.keys():
+                # Compute NXCORR and SSIM value
+                image1 = np.array(movieIs['truth'][f].imarr(pol='I'))
+                image2 = np.array(movieIs[p][f].imarr(pol='I'))
+                #data_range = image1.max() - image1.min()
+                #ssim_value, _ = ssim(image1, image2, data_range=data_range, full=True)
+        
+                nxcorr_value = normalized_cross_correlation(image1, image2)
+                #ax[i].text(0.05, 0.95, f'SSIM: {ssim_value:.4f}', color='black', ha='left', va='top', transform=ax[i].transAxes)
+                ax[i].text(0.05, 0.95, f'nxcorr I: {nxcorr_value:.3f}', color='black', ha='left', va='top', transform=ax[i].transAxes)
         
             ax[i].set_title(titles[p], fontsize=18)
             ax[i].set_xticks([]), ax[i].set_yticks([])

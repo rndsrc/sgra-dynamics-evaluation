@@ -32,6 +32,7 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none',help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./chi2.png', 
                    help='name of output file with path')
     p.add_argument('--pol',  type=str, default='I',help='I,Q,U,V')
@@ -57,6 +58,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
     
 ######################################################################
 
@@ -93,6 +96,8 @@ for p in polpaths.keys():
             tstamp = times[ii]
             im = mv.get_image(times[ii])
             im.rf = obslist_t[ii].rf
+            im.ra=obslist_t[ii].ra
+            im.dec=obslist_t[ii].dec
             if im.xdim%2 == 1:
                 im = im.regrid_image(targetfov=im.fovx(), npix=im.xdim-1)
                 im.rf=obslist_t[ii].rf
@@ -146,7 +151,7 @@ for i in tqdm(range(numplt)):
     # closure phase
     subtab  = select_triangle(ctab, tri_list[i][0], tri_list[i][1], tri_list[i][2])
     axs[i].errorbar(subtab['time'], subtab['cphase'], yerr=subtab['sigmacp'],
-                    c='black', mec='black', marker='o', ls="None", ms=5, alpha=0.5)
+                    c='black', mec='black', marker='o', ls="None", ms=5, alpha=1.0)
     
     # Model
     for pipe in polpaths.keys():
@@ -155,7 +160,7 @@ for i in tqdm(range(numplt)):
 
         # plot
         axs[i].errorbar(clphs_mod_time[tri_list[i]], clphs_mod_win[tri_list[i]], 
-                        c=colors[pipe], marker='o', ms=2.5, ls="none", label=labels[pipe], alpha=0.5)
+                        c=colors[pipe], marker='o', ms=2.5, ls="none", label=labels[pipe], alpha=1.0)
     
 
     axs[i].set_title("%s-%s-%s" %(tri_list[i][0], tri_list[i][1], tri_list[i][2]), fontsize=18)

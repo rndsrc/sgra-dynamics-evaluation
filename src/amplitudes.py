@@ -33,6 +33,7 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none', help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./amp.png', 
                    help='name of output file with path')
     p.add_argument('--pol',  type=str, default='I',help='I,Q,U,V')
@@ -57,6 +58,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
 
 obs = eh.obsdata.load_uvfits(args.data)
 obs, times, obslist_t, polpaths = process_obs(obs, args, paths)
@@ -82,6 +85,8 @@ for p in polpaths.keys():
             tstamp = times[ii]
             im = mv.get_image(times[ii])
             im.rf = obslist_t[ii].rf
+            im.ra=obslist_t[ii].ra
+            im.dec=obslist_t[ii].dec
             if im.xdim%2 == 1:
                 im = im.regrid_image(targetfov=im.fovx(), npix=im.xdim-1)
                 im.rf=obslist_t[ii].rf
@@ -135,14 +140,14 @@ for i in range(1,numplt+1):
 for i in tqdm(range(numplt)):
     subtab  = select_baseline(vtab, bs_list[i][0], bs_list[i][1])
     axs[i].errorbar(subtab['time'], abs(subtab[vis]), yerr=subtab[sigma],
-                    c='black', mec='black', marker='o', ls="None", ms=5, alpha=0.5)
+                    c='black', mec='black', marker='o', ls="None", ms=5, alpha=1.0)
 
     for pipe in polpaths.keys():
         mv = eh.movie.load_hdf5(polpaths[pipe])
         amp_mod_time, amp_mod_win = mov_amp[pipe]
         
         axs[i].errorbar(amp_mod_time[bs_list[i]], amp_mod_win[bs_list[i]], 
-                        c=colors[pipe], marker='o', ms=2.5, ls="none", label=labels[pipe], alpha=0.5)
+                        c=colors[pipe], marker='o', ms=2.5, ls="none", label=labels[pipe], alpha=1.0)
     
 
     axs[i].set_title("%s-%s" %(bs_list[i][0], bs_list[i][1]), fontsize=18)

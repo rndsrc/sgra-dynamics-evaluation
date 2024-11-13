@@ -30,6 +30,7 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none',help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('-o', '--outpath', type=str, default='./gif.gif', 
                    help='name of output file with path')
     p.add_argument('--scat', type=str, default='none', help='onsky, deblur, dsct, none')
@@ -57,6 +58,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
     
 ######################################################################
 
@@ -87,9 +90,13 @@ for p in paths.keys():
         imlist.append(im)
     mv[p] = eh.movie.merge_im_list(imlist)
 
+
+def linear_interpolation(x, x1, y1, x2, y2):
+    return y1 + (y2 - y1) * (x - x1) / (x2 - x1)
+
 # Create subplots
-fig, ax = plt.subplots(nrows=1, ncols=N, figsize=(15*N/7+1,5))
-fig.subplots_adjust(hspace=0.1, wspace=0.1, top=0.7, bottom=0.1, left=0.005, right=0.9)
+fig, ax = plt.subplots(nrows=1, ncols=N, figsize=(linear_interpolation(N, 2, 8, 7, 16),linear_interpolation(N, 2, 4, 7, 3)))
+fig.subplots_adjust(hspace=linear_interpolation(N, 2, 0.01, 7, 0.1), wspace=linear_interpolation(N, 2, 0.05, 7, 0.1), top=linear_interpolation(N, 2, 0.8, 7, 0.7), bottom=linear_interpolation(N, 2, 0.01, 7, 0.1), left=linear_interpolation(N, 2, 0.01, 7, 0.005), right=linear_interpolation(N, 2, 0.8, 7, 0.9))
 for i in range(N):
     ax[i].set_xticks([]), ax[i].set_yticks([])
     
@@ -136,8 +143,9 @@ for p in paths.keys():
     ax[i].set_title(titles[p])
     i=i+1
 # Add colorbar to the last subplot
-cax = fig.add_axes([0.01, 0.15, 0.885, 0.02])  # Adjust the position and size as needed
-cb = plt.colorbar(a, cax=cax, orientation='horizontal')
-cb.set_label('Visibility Variance (10$^{-2}$ Jy$^2$)')
-
+ax1 = fig.add_axes([linear_interpolation(N, 2, 0.82, 7, 0.92), linear_interpolation(N, 2, 0.025, 7, 0.1), linear_interpolation(N, 2, 0.035, 7, 0.01), linear_interpolation(N, 2, 0.765, 7, 0.6)] , anchor = 'E') 
+cbar = fig.colorbar(a, cax=ax1, ax=None, label = 'Var(|$\mathcal{V}|$) (10$^{-2}$ Jy$^2$)', ticklocation='right')
+cbar.set_label('Var(|$\mathcal{V}|$) (10$^{-2}$ Jy$^2$)', fontsize=18)
+cbar.set_ticks([0.0, max(varmax)*0.25, max(varmax)*0.50, max(varmax)*0.75, max(varmax)])
+    
 plt.savefig(f'{outpath}.png', bbox_inches='tight')

@@ -33,6 +33,7 @@ def create_parser():
     p.add_argument('--dogmv',  type=str, default='none', help='path of doghit .hdf5')
     p.add_argument('--ngmv',   type=str, default='none', help='path of ngmem .hdf5')
     p.add_argument('--resmv',  type=str, default='none', help='path of resolve .hdf5')
+    p.add_argument('--modelingmv',  type=str, default='none', help='path of modeling .hdf5')
     p.add_argument('--model',    type=str, default='none', help='type of model: crescent, ring, disk, edisk, double, point, mring_1_4')
     p.add_argument('--template', type=str, default='none', help='VIDA template')
     p.add_argument('-c', '--cores', type=int, default='64',help='number of cores to use')
@@ -64,6 +65,8 @@ if args.dogmv!='none':
     paths['doghit']=args.dogmv 
 if args.ngmv!='none':
     paths['ngmem']=args.ngmv
+if args.modelingmv!='none':
+    paths['modeling']=args.modelingmv
 
 ######################################################################
 
@@ -207,7 +210,7 @@ if model=='crescent':
 elif model=='ring':
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(14,3), sharex=True)
      
-    alpha = 0.5
+    alpha=1.0
     lc='grey'
 
     ax[0].set_ylabel('Diameter $d (\mu$as)')
@@ -285,7 +288,7 @@ elif model=='ring':
 elif model=='disk':
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(14,3), sharex=True)
      
-    alpha = 0.5
+    alpha=1.0
     lc='grey'
 
     ax[0].set_ylabel('Diameter $d (\mu$as)')
@@ -357,7 +360,7 @@ elif model=='disk':
 elif model=='edisk':
     
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(14,6), sharex=True)
-    alpha = 0.5
+    alpha=1.0
     lc='grey'
 
     ax[0,0].set_ylabel('Diameter $d (\mu$as)')
@@ -458,7 +461,7 @@ elif model=='edisk':
 elif model=='double':
     
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(14,6), sharex=True)
-    alpha = 0.5
+    alpha=1.0
     lc='grey'
 
     ax[0,0].set_ylabel('FWHM 1 ($\mu$as)')
@@ -568,7 +571,7 @@ elif model=='double':
 
 elif model=='point':
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(14,6), sharex=True)
-    alpha = 0.5
+    alpha=1.0
     lc='grey'
 
     ax[0,0].set_ylabel('FWHM 1 ($\mu$as)')
@@ -678,7 +681,7 @@ elif model=='point':
 
 elif model=='gaussian':
     fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(14,6), sharex=True)
-    alpha = 0.5
+    alpha=1.0
     lc='grey'
 
     ax[0,0].set_ylabel('FWHM ($\mu$as)')
@@ -732,39 +735,40 @@ elif model=='gaussian':
         r0_dict[p]=r0
         pa_dict[p]=pa
         
-    score={}
-    for p in paths.keys():
-        if p!='truth':
-            score[p]=np.zeros(3)
-    row_labels = ['FWHM', 'Distance', 'PA']
-    table_vals = pd.DataFrame(data=score, index=row_labels)
-    for p in paths.keys():
-        if p!='truth':
-            signal1 = d1_dict['truth']
-            signal2 = d1_dict[p]
-            table_vals[p][row_labels[0]] = normalized_rmse(signal1, signal2, w_norm['I'])
-            signal1 = r0_dict['truth']
-            signal2 = r0_dict[p]
-            table_vals[p][row_labels[1]] = normalized_rmse(signal1, signal2, w_norm['I'])
-            signal1 = pa_dict['truth']
-            signal2 = pa_dict[p]
-            table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
+    if 'truth' in paths.keys():
+        score={}
+        for p in paths.keys():
+            if p!='truth':
+                score[p]=np.zeros(3)
+        row_labels = ['FWHM', 'Distance', 'PA']
+        table_vals = pd.DataFrame(data=score, index=row_labels)
+        for p in paths.keys():
+            if p!='truth':
+                signal1 = d1_dict['truth']
+                signal2 = d1_dict[p]
+                table_vals[p][row_labels[0]] = normalized_rmse(signal1, signal2, w_norm['I'])
+                signal1 = r0_dict['truth']
+                signal2 = r0_dict[p]
+                table_vals[p][row_labels[1]] = normalized_rmse(signal1, signal2, w_norm['I'])
+                signal1 = pa_dict['truth']
+                signal2 = pa_dict[p]
+                table_vals[p][row_labels[2]] = normalized_rmse(signal1, signal2, w_norm['I'])
+        
+        table_vals.replace(0.00, '-', inplace=True)
     
-    table_vals.replace(0.00, '-', inplace=True)
-
-    table = ax[0,0].table(cellText=table_vals.values,
-                        rowLabels=table_vals.index,
-                        colLabels=table_vals.columns,
-                        cellLoc='center',
-                        loc='bottom',
-                        bbox=[0.35, -2.3, 1.5, 0.7])
-    table.auto_set_font_size(False)
-    table.set_fontsize(18)
-    for c in table.get_children():
-        c.set_edgecolor('none')
-        c.set_text_props(color='black')
-        c.set_facecolor('none')
-        c.set_edgecolor('black')
+        table = ax[0,0].table(cellText=table_vals.values,
+                            rowLabels=table_vals.index,
+                            colLabels=table_vals.columns,
+                            cellLoc='center',
+                            loc='bottom',
+                            bbox=[0.35, -2.3, 1.5, 0.7])
+        table.auto_set_font_size(False)
+        table.set_fontsize(18)
+        for c in table.get_children():
+            c.set_edgecolor('none')
+            c.set_text_props(color='black')
+            c.set_facecolor('none')
+            c.set_edgecolor('black')
         
     ax[0,0].legend(ncols=len(paths.keys()), loc='best',  bbox_to_anchor=(2.1, 1.4), markerscale=2.0)
     
